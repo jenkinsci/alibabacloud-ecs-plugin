@@ -246,7 +246,7 @@ public class AlibabaEcsSpotFollower extends Slave {
             //throw new AliyunEcsException("assignPublicIp error. instanceId: " + ecsInstanceId);
             return false;
         }
-        this.publicIp = ipAddr;
+        log.info("assignPublicIp success. instanceId: {} ipAddr: {} ", ecsInstanceId, ipAddr);
         return true;
     }
 
