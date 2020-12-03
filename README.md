@@ -3,7 +3,7 @@
    * [Introduction](#introduction)
    * [Usage](#usage)
       * [Create a key pair](#Create-a-key-pair-of-ECS)
-      * [Download plugin](#Download-"Alibaba Cloud ECS plugin")
+      * [Download plugin](#Download-Alibaba-Cloud-ECS-plugin)
       * [Configure clouds](#Configure-clouds)
    * [Some known problems in use](#Some-known-problems-in-use)
    * [Contact us](#Contact-us)
@@ -32,7 +32,7 @@ https://help.aliyun.com/document_detail/51792.html?spm=5176.ecsbuyv3.system.2.82
 
 
 
-### Download "Alibaba Cloud ECS plugin"
+### Download Alibaba Cloud ECS plugin
 * Enter the installed Jenkins client and go to the "manage Jenkins" / > "manage plugins" / > "available" page
 ![](docs/images/jenkins.avail.png)
 * Enter "Alibaba Cloud ECS" plugin in the search box to download and install
