@@ -217,39 +217,6 @@ public class AlibabaEcsSpotFollower extends Slave {
         return false;
     }
 
-    public boolean assignPublicIp() {
-        boolean statusOK = false;
-        String lastStatus = "";
-        for (int i = 0; i < 30; i++) {
-            lastStatus = status();
-            if ("Running".equals(lastStatus) || "Stopped".equals(lastStatus)) {
-                statusOK = true;
-                break;
-            }
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException e) {
-                log.error("", e);
-            }
-        }
-        if (!statusOK) {
-            String msg = String.format("assignPublicIp error. ecs status error. instanceId: %s lastStatus: %s",
-                ecsInstanceId,
-                lastStatus);
-            log.error(msg);
-            return false;
-        }
-        AlibabaEcsClient connect = getCloud().connect();
-        String ipAddr = connect.allocatePublicIp(ecsInstanceId);
-        if (StringUtils.isBlank(ipAddr)) {
-            log.error("assignPublicIp error. instanceId: " + ecsInstanceId);
-            //throw new AliyunEcsException("assignPublicIp error. instanceId: " + ecsInstanceId);
-            return false;
-        }
-        log.info("assignPublicIp success. instanceId: {} ipAddr: {} ", ecsInstanceId, ipAddr);
-        return true;
-    }
-
     public void terminate() {
         Computer.threadPoolForRemoting.submit(() -> {
             try {

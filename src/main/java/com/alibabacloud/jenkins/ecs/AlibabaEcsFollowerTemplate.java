@@ -102,7 +102,6 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId, templateId + "-" + instanceId,
                 remoteFs,
                 parent.getDisplayName(), labelString, initScript, getTemplateId());
-            alibabaEcsSpotFollower.assignPublicIp();
             list.add(alibabaEcsSpotFollower);
         }
         return list;
