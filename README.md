@@ -2,6 +2,7 @@
 [![Jenkins](https://ci.jenkins.io/job/Plugins/job/alibabacloud-ecs-plugin/job/master/badge/icon)](https://ci.jenkins.io/job/Plugins/job/alibabacloud-ecs-plugin/job/master)
 [![Gitter](https://badges.gitter.im/alibabacloud-ecs-plugin/community.svg)](https://gitter.im/alibabacloud-ecs-plugin/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+See the [中文文档](README_ZH_CN.md) for Chinese readme.
 # Table of contents
    * [Introduction](#introduction)
    * [Usage](#usage)
