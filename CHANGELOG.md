@@ -1,4 +1,8 @@
 ## Changelog
+### Version 1.3 (Dec 22, 2020)
+- Add chinese readme index.
+- Delete allocate public ip method.
+
 ### Version 1.2 (Dec 3, 2020)
 - Fixed public IP connection error.
 
