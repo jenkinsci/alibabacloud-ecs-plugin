@@ -54,6 +54,11 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
     private transient AlibabaCloud parent;
 
+    /**
+     * master 是否在私网环境内
+     */
+    private Boolean intranetMaster;
+
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs) {
         this.region = region;
@@ -70,7 +75,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs,
                                       String systemDiskCategory, Integer systemDiskSize,
-                                      Boolean attachPublicIp) {
+                                      Boolean attachPublicIp,  Boolean intranetMaster) {
         this.region = region;
         this.zone = zone;
         this.instanceType = instanceType;
@@ -84,6 +89,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.systemDiskSize = systemDiskSize;
         if (attachPublicIp != null) {
             this.attachPublicIp = attachPublicIp;
+        }
+        if (intranetMaster != null) {
+            this.intranetMaster = intranetMaster;
         }
     }
 
@@ -180,6 +188,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         if (BooleanUtils.isTrue(attachPublicIp)) {
             request.setInternetMaxBandwidthIn(10);
             request.setInternetMaxBandwidthOut(10);
+        }
+        if (intranetMaster){
+            request.productNetwork = "vpc";
         }
         List<String> instanceIdSets = connect.runInstances(request);
         if (CollectionUtils.isEmpty(instanceIdSets)
