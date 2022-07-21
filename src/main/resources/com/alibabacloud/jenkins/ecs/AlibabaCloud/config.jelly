@@ -4,6 +4,11 @@
     <f:entry title="${%Name}" field="name">
         <f:textbox default="Ecs Spot"/>
     </f:entry>
+
+    <f:entry title="${%Public Master}" field="intranetMaster">
+        <f:checkbox default="true"/>
+    </f:entry>
+
     <f:entry field="credentialsId" title="${%Alibaba Cloud Credentials}"
              description="Alibaba Cloud IAM Access Key used to connect to ECS. If not specified, implicit authentication mechanisms are used (IAM roles...)">
         <c:select default="${it.credentialsId}" includeUser="false"/>
@@ -14,7 +19,7 @@
     </f:entry>
 
     <f:entry title="${%Image}" field="image">
-        <f:select default="${it.image}"/>
+        <f:textbox/>
     </f:entry>
 
     <f:entry title="${%VPC}" field="vpc">
@@ -41,7 +46,7 @@
     </f:entry>
 
     <f:entry field="instanceType" title="Choose Instance Type">
-        <f:select default="${it.instanceType}"/>
+        <f:textbox/>
     </f:entry>
 
     <f:entry title="${%Minimum number of instances}" field="minimumNumberOfInstances">

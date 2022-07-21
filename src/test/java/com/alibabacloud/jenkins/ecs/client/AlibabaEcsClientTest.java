@@ -187,7 +187,7 @@ public class AlibabaEcsClientTest {
 
     // Delete all existing VPCs
     private void deleteAllVPCs(AlibabaEcsClient client) {
-        for (Vpc vpc : client.describeVpcs()) {
+        for (Vpc vpc : client.describeVpcs(false)) {
             client.deleteVpc(vpc.getVpcId());
         }
     }

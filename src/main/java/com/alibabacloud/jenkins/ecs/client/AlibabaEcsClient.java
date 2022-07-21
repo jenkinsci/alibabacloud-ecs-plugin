@@ -48,9 +48,13 @@ public class AlibabaEcsClient {
         log.info("AlibabaEcsClient init success. regionNo: {}", regionNo);
     }
 
-    public List<Region> describeRegions() {
+    public List<Region> describeRegions(Boolean intranetMaster) {
         try {
+
             DescribeRegionsRequest request = new DescribeRegionsRequest();
+            if (intranetMaster){
+                request.productNetwork ="vpc";
+            }
             request.setSysRegionId(regionNo);
             DescribeRegionsResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getRegions())) {
@@ -77,8 +81,11 @@ public class AlibabaEcsClient {
         return Lists.newArrayList();
     }
 
-    public List<Vpc> describeVpcs() {
+    public List<Vpc> describeVpcs(Boolean intranetMaster) {
         DescribeVpcsRequest request = new DescribeVpcsRequest();
+        if (intranetMaster){
+            request.productNetwork = "vpc";
+        }
         request.setPageNumber(INIT_PAGE_NUMBER);
         request.setPageSize(MAX_PAGE_SIZE);
         request.setSysRegionId(regionNo);
@@ -151,9 +158,12 @@ public class AlibabaEcsClient {
         return false;
     }
 
-    public List<SecurityGroup> describeSecurityGroups(String vpc) {
+    public List<SecurityGroup> describeSecurityGroups(String vpc, Boolean intranetMaster) {
         try {
             DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
+            if (intranetMaster){
+                request.productNetwork = "vpc";
+            }
             request.setSysRegionId(regionNo);
             request.setVpcId(vpc);
             DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);

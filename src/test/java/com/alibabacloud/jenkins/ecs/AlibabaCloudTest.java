@@ -37,7 +37,7 @@ public class AlibabaCloudTest {
         when(CredentialsHelper.getCredentials(credentialsId)).thenReturn(credentials);
 
         AlibabaCloud cloud = new AlibabaCloud("testCloud", credentialsId, sshKey, "cn-beijing", "centos", "test-vpc",
-            "test-sg", "cn-beijing-a", "test-vsw", "ecs.c5.large", 1, "", "", "", "", 20, false);
+            "test-sg", "cn-beijing-a", "test-vsw", "ecs.c5.large", 1, "", "", "", "", 20, false, false);
         assertNotNull(cloud);
     }
 }
