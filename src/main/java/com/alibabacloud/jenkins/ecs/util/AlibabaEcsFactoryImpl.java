@@ -11,7 +11,7 @@ import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
 public class AlibabaEcsFactoryImpl implements AlibabaEcsFactory {
 
     @Override
-    public AlibabaEcsClient connect(AlibabaCloudCredentials credentials, String regionNo) {
-        return new AlibabaEcsClient(credentials, regionNo);
+    public AlibabaEcsClient connect(AlibabaCloudCredentials credentials, String regionNo, Boolean intranetMaster) {
+        return new AlibabaEcsClient(credentials, regionNo, intranetMaster);
     }
 }

@@ -38,23 +38,26 @@ public class AlibabaEcsClient {
     private String regionNo;
     private static Integer MAX_PAGE_SIZE = 50;
     private static Integer INIT_PAGE_NUMBER = 1;
+    private Boolean intranetMaster = Boolean.FALSE;
 
-    public AlibabaEcsClient(AlibabaCloudCredentials credentials, String regionNo) {
+    public AlibabaEcsClient(AlibabaCloudCredentials credentials, String regionNo, Boolean intranetMaster) {
         IClientProfile profile = DefaultProfile.getProfile(regionNo,
                 credentials.getAccessKeyId(),
                 credentials.getAccessKeySecret());
+        if(intranetMaster != null && intranetMaster) {
+            // use vpc endpoint if jenkins master in vpc private env
+            profile.enableUsingVpcEndpoint();
+        }
         this.client = new DefaultAcsClient(profile);
         this.regionNo = regionNo;
-        log.info("AlibabaEcsClient init success. regionNo: {}", regionNo);
+        this.intranetMaster = intranetMaster == null ? Boolean.FALSE: intranetMaster;
+        log.info("AlibabaEcsClient init success. regionNo: {} intranetMaster: {}", regionNo, intranetMaster);
     }
 
-    public List<Region> describeRegions(Boolean intranetMaster) {
+    public List<Region> describeRegions() {
         try {
 
             DescribeRegionsRequest request = new DescribeRegionsRequest();
-            if (intranetMaster){
-                request.productNetwork ="vpc";
-            }
             request.setSysRegionId(regionNo);
             DescribeRegionsResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getRegions())) {
@@ -81,11 +84,8 @@ public class AlibabaEcsClient {
         return Lists.newArrayList();
     }
 
-    public List<Vpc> describeVpcs(Boolean intranetMaster) {
+    public List<Vpc> describeVpcs() {
         DescribeVpcsRequest request = new DescribeVpcsRequest();
-        if (intranetMaster){
-            request.productNetwork = "vpc";
-        }
         request.setPageNumber(INIT_PAGE_NUMBER);
         request.setPageSize(MAX_PAGE_SIZE);
         request.setSysRegionId(regionNo);
@@ -158,12 +158,9 @@ public class AlibabaEcsClient {
         return false;
     }
 
-    public List<SecurityGroup> describeSecurityGroups(String vpc, Boolean intranetMaster) {
+    public List<SecurityGroup> describeSecurityGroups(String vpc) {
         try {
             DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
-            if (intranetMaster){
-                request.productNetwork = "vpc";
-            }
             request.setSysRegionId(regionNo);
             request.setVpcId(vpc);
             DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);

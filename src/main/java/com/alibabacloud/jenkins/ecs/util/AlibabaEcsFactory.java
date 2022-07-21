@@ -21,5 +21,5 @@ public interface AlibabaEcsFactory extends ExtensionPoint {
         return instance;
     }
 
-    AlibabaEcsClient connect(AlibabaCloudCredentials credentials, String regionNo);
+    AlibabaEcsClient connect(AlibabaCloudCredentials credentials, String regionNo, Boolean intranetMaster);
 }

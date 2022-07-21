@@ -5,8 +5,8 @@
         <f:textbox default="Ecs Spot"/>
     </f:entry>
 
-    <f:entry title="${%Public Master}" field="intranetMaster">
-        <f:checkbox default="true"/>
+    <f:entry title="${%Jenkins Master In Private Network?}" field="intranetMaster">
+        <f:checkbox default="false"/>
     </f:entry>
 
     <f:entry field="credentialsId" title="${%Alibaba Cloud Credentials}"

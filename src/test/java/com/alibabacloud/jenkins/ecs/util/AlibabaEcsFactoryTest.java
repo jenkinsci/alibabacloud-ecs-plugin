@@ -31,7 +31,7 @@ public class AlibabaEcsFactoryTest {
         String sk = "<sample-sk>";
         AlibabaCloudCredentials credentials = new BasicCredentials(ak, sk);
         String endpointName = "cn-hangzhou";
-        AlibabaEcsClient connect = AlibabaEcsFactory.getInstance().connect(credentials, endpointName);
+        AlibabaEcsClient connect = AlibabaEcsFactory.getInstance().connect(credentials, endpointName, true);
         assertNotNull(connect);
     }
 }
