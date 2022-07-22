@@ -284,7 +284,7 @@ public class AlibabaCloud extends Cloud {
                 }
                 AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
                 KeyPair keyPair = AlibabaKeyPairUtils.find(sshCredential.getPrivateKey(), credentials,
-                    getRegion());
+                    getRegion(), intranetMaster);
                 privateKey = new AlibabaPrivateKey(sshCredential.getPrivateKey(), keyPair.getKeyPairName());
             } catch (Exception e) {
                 log.error("resolvePrivateKey error. sshKey: {}", sshKey, e);
@@ -576,7 +576,7 @@ public class AlibabaCloud extends Cloud {
                 // 2. 校验SSHKey是否存在
                 BasicSSHUserPrivateKey sshCredential = getSshCredential(sshKey);
                 KeyPair keyPair = AlibabaKeyPairUtils.find(sshCredential.getPrivateKey(), credentials,
-                    region);
+                    region, intranetMaster);
                 if (null == keyPair) {
                     return FormValidation.error("Illegal SSH PrivateKey: " + sshKey);
                 }
@@ -588,7 +588,7 @@ public class AlibabaCloud extends Cloud {
         }
 
         @RequirePOST
-        public ListBoxModel doFillRegionItems(@QueryParameter String credentialsId, @QueryParameter Boolean intranetMaster) {
+        public ListBoxModel doFillRegionItems(@QueryParameter String credentialsId) {
             Jenkins.get().checkPermission(Permission.CREATE);
             Jenkins.get().checkPermission(Permission.UPDATE);
             ListBoxModel model = new ListBoxModel();
@@ -600,17 +600,40 @@ public class AlibabaCloud extends Cloud {
                         DEFAULT_ECS_REGION, credentialsId);
                     return model;
                 }
-                AlibabaEcsClient client = new AlibabaEcsClient(credentials, DEFAULT_ECS_REGION, intranetMaster);
-                List<Region> regions = client.describeRegions();
-                for (Region region : regions) {
-                    model.add(region.getLocalName(), region.getRegionId());
-                }
+                model.add("华北1（青岛）","cn-qingdao");
+                model.add("华北2（北京）","cn-beijing");
+                model.add( "华北3（张家口）","cn-zhangjiakou");
+                model.add("华北5（呼和浩特）","cn-huhehaote");
+                model.add("华北6（乌兰察布）","cn-wulanchabu");
+                model.add("华东1（杭州）","cn-hangzhou");
+                model.add("华东2（上海）","cn-shanghai");
+                model.add("华南1（深圳）","cn-shenzhen");
+                model.add( "华南2（河源）","cn-heyuan");
+                model.add("华南3（广州）","cn-guangzhou");
+                model.add("西南1（成都）","cn-chengdu");
+                model.add("中国（香港）", "cn-hongkong");
+                model.add("亚太东北 1 (东京)","ap-northeast-1");
+                model.add( "韩国（首尔）","ap-northeast-2");
+                model.add( "亚太东南 1 (新加坡)","ap-southeast-1");
+                model.add("亚太东南 2 (悉尼)","ap-southeast-2");
+                model.add("亚太东南 3 (吉隆坡)","ap-southeast-3");
+                model.add("菲律宾（马尼拉）","ap-southeast-6");
+                model.add("亚太东南 5 (雅加达)","ap-southeast-5");
+                model.add("亚太南部 1 (孟买)","ap-south-1");
+                model.add("泰国（曼谷）","ap-southeast-7");
+                model.add("美国东部 1 (弗吉尼亚)","us-east-1");
+                model.add("美国西部 1 (硅谷)","us-west-1");
+                model.add( "英国 (伦敦)","eu-west-1");
+                model.add("中东东部 1 (迪拜)","me-east-1");
+                model.add("沙特（利雅得)","me-central-1");
+                model.add( "欧洲中部 1 (法兰克福)","eu-central-1");
             } catch (Exception ex) {
                 // Ignore, as this may happen before the credentials are specified
             }
             return model;
         }
 
+        /**
         @RequirePOST
         public ListBoxModel doFillImageItems(@QueryParameter String credentialsId, @QueryParameter String region, @QueryParameter Boolean intranetMaster) {
             Jenkins.get().checkPermission(Permission.CREATE);
@@ -640,6 +663,7 @@ public class AlibabaCloud extends Cloud {
             }
             return model;
         }
+         **/
 
         @RequirePOST
         public ListBoxModel doFillSystemDiskCategoryItems() {

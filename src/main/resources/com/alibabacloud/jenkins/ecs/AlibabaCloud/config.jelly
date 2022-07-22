@@ -35,7 +35,7 @@
     </f:entry>
 
     <f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection"
-                      with="credentialsId,sshKey,region"/>
+                      with="credentialsId,sshKey,region,intranetMaster"/>
 
     <f:entry title="${%Availability Zone}" field="zone">
         <f:select default="${it.zone}"/>
