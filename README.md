@@ -12,6 +12,7 @@ See the [中文文档](README_ZH_CN.md) for Chinese readme.
       * [Configure clouds](#configureClouds)
          * [Navigate to Configure Clouds Menu](#cloudsMenu)
          * [Add New Cloud](#addNewCloud)
+         * [Tick Jenkins Master In Private Network](#privateNetwork)
          * [Configure "Cloud Name"](#cloudsName)
          * [Configure "Credentials"](#configurAkSK)
             * [Add new credentials **-Required**](#addNewCredentials)
@@ -31,6 +32,9 @@ See the [中文文档](README_ZH_CN.md) for Chinese readme.
          * [Configure "Init Script" **-Optional**](#configureInitScript)
          * [Configure "Labels" **-Optional**](#configureLabels)
          * [Configure "Remote FS root" **-Optional**](#remoteFSRoot)
+         * [Configure System Disk Category **-Optional**](#systemDiskCategory)
+         * [Configure System Disk Size **-Optional**](#systemDiskSize)
+         * [Configure Assign Public Ip](#publicIp)
       * [Provision Nodes ](#provisionNodes)
    * [Trouble Shooting](#troubleShooting)
    * [Change Log](#changeLog)
@@ -95,18 +99,28 @@ A name is mandatory to identify the clouds.
 
 ![](docs/images/jenkins_configure_name.png)
 
-### 3.4 Configure "Credentials" <a id="configurAkSK"></a>
+### 3.4 Tick "Jenkins Master In Private Network" <a id="privateNetwork"></a>
+Whether the current Jenkins Master is deployed in the VPC intranet environment (that is, whether it has access to the public network). 
+If your Jenkins Master is deployed in the intranet environment (that is, does not have access to the public network), 
+please check this option, and follow-up plug-ins Calling the Alibaba Cloud SDK will use the VPC private network domain name to make requests. 
+If this option is not checked, the public network domain name will be used for access by default, which will lead to unreachable access, 
+so the subsequent use of the plug-in will result in a "ConnectTimeoutException" exception. 
+If you have access to the public network (that is, you have access to the public network),
+you do not need to check this option. Subsequent calls to the Alibaba Cloud SDK will use the public network domain name for requests.
+
+
+### 3.5 Configure "Credentials" <a id="configurAkSK"></a>
 An effective is necessary. Plugin uses the credential(aka ak/sk) to invoke Alibaba Cloud ECS OpenAPI in order to create ECS as slave node. 
 
-#### 3.4.1 Add new credentials **-Required** <a id="addNewCredentials"></a>
+#### 3.5.1 Add new credentials **-Required** <a id="addNewCredentials"></a>
 
 ![](docs/images/configure_credentials_1.png)
 
-#### 3.4.2 Select "Alibaba Cloud Credentials" **-Required** <a id="alibabaCloudCredentials"></a>
+#### 3.5.2 Select "Alibaba Cloud Credentials" **-Required** <a id="alibabaCloudCredentials"></a>
 
 ![](docs/images/jenkins_credentials_kind.png)
 
-#### 3.4.3 Input "Access Key ID" & "Secret Access Key" **-Required** <a id="inputAkAndSk"></a>
+#### 3.5.3 Input "Access Key ID" & "Secret Access Key" **-Required** <a id="inputAkAndSk"></a>
 * Type in the ak/sk you've previously created in [Prerequisites](#Prerequisites) part
 * Please make sure you don't have any warnings listed below: 
 
@@ -116,34 +130,34 @@ An effective is necessary. Plugin uses the credential(aka ak/sk) to invoke Aliba
 
 ![](docs/images/jenkins.right.png)
 
-#### 3.4.4 Configure "Credentials" **-Required** <a id="configureCredentials"></a>
+#### 3.5.4 Configure "Credentials" **-Required** <a id="configureCredentials"></a>
 Select the credentials you've just created 
 
 ![](docs/images/jenkins.testCre.png)
 
-### 3.5 Configure "Region" **-Required** <a id="configureRegion"></a>
+### 3.6 Configure "Region" **-Required** <a id="configureRegion"></a>
 Select the right region where the slave ECS node will be provisioned.
 
 ![](docs/images/jenkins_configure_region.png)
 
-### 3.6 Configure "Image" **-Required** <a id="configureImage"></a>
+### 3.7 Configure "Image" **-Required** <a id="configureImage"></a>
 Select the right image type.
 
 ![](docs/images/jenkins_configure_image.png)
 
-### 3.7 Configure "VPC" **-Optional** <a id="configureVpc"></a>
+### 3.8 Configure "VPC" **-Optional** <a id="configureVpc"></a>
 If there is any VPCs in your selected region, they will be listed in the "VPC" drop down list. And if no VPC found, a default VPC will be created with 172.16.0.0/12 CIDR block
 
 ![](docs/images/jenkins_configure_vpc.png)
 
 
-### 3.8 Configure "Security Group" **-Optional** <a id="securityGroup"></a>
+### 3.9 Configure "Security Group" **-Optional** <a id="securityGroup"></a>
 If there is any Security Groups in your selected region, they will be listed in the "Security Group" drop down list. And if no security group found, a default security will be created with "22/22" port range access.
 
 ![](docs/images/jenkins_configure_sg.png)
 
 
-### 3.9 Configure "ECS SSH Key" **-Required** <a id="ecsSSHKey"></a>
+### 4.0 Configure "ECS SSH Key" **-Required** <a id="ecsSSHKey"></a>
 * Enter the SSH Key obtained in [STEP 1: Create a key pair for ECS](#SSHKey)
 * Currently, only "SSH username with private key" is supported.
 
@@ -151,42 +165,48 @@ If there is any Security Groups in your selected region, they will be listed in 
 
 ![](docs/images/jenkins.SSH.png)
 
-### 3.10 "Test Connection" **-Required** <a id="testConnection"></a>
+### 4.10 "Test Connection" **-Required** <a id="testConnection"></a>
 Before going on, you should click "Test Connection" button to run a thoroughly check and make sure all the required items are successfully configured.  
 
 ![](docs/images/jenkins.conn.png)
 
-### 3.11 Configure "Available Zone" **-Optional** <a id="availableZone"></a>
+### 4.11 Configure "Available Zone" **-Optional** <a id="availableZone"></a>
 Select the right available zone where the slave ECS node will be provisioned. And if no Available Zone selected, a random zone will be selected.
 
 ![](docs/images/jenkins_configure_az.png)
 
 
-### 3.12 Configure "VSW" **-Optional** <a id="configureVSW"></a>
+### 4.12 Configure "VSW" **-Optional** <a id="configureVSW"></a>
 Select the right vsw where the slave ECS node will be provisioned. And if no VSW selected, a random vsw that doesn't overlap with the existing vsws will be created.
 
 ![](docs/images/jenkins_configure_vsw.png)
 
-### 3.13 Configure "Instance Type" **-Optional** <a id="instanceType"></a>
+### 4.13 Configure "Instance Type" **-Optional** <a id="instanceType"></a>
 Select the right instance type that the slave ECS node will be provisioned. And if no instance type selected, a random instance type will be selected.
 
 ![](docs/images/jenkins_configure_flavor.png)
 
-### 3.14 Configure "Minimum number of instances" **-Optional** <a id="minimumNumberOfInstance"></a>
+### 4.14 Configure "Minimum number of instances" **-Optional** <a id="minimumNumberOfInstance"></a>
 Minimum number of instances is the number of follower nodes used to generate the follower. 
 This plugin will create the follower according to the number filled in. The number should be at least 1
 
 ![](docs/images/jenkins_configure_instance_count.png)
 
 
-### 3.15 Configure "Init Script" **-Optional** <a id="configureInitScript"></a>
+### 4.15 Configure "Init Script" **-Optional** <a id="configureInitScript"></a>
 Init script is the shell script to be run on the newly launched follower node instance, before Jenkins starts launching a follower node. 
 This is also a good place to install additional packages that you need for your builds and tests.
 
-### 3.16 Configure "Labels" **-Optional** <a id="configureLabels"></a>
+### 4.16 Configure "Labels" **-Optional** <a id="configureLabels"></a>
 
-### 3.17 Configure "Remote FS root" **-Optional** <a id="remoteFSRoot"></a>
+### 4.17 Configure "Remote FS root" **-Optional** <a id="remoteFSRoot"></a>
 
+### 4.18 Configure "System Disk Category" **-Optional** <a id="systemDiskCategory"></a>
+
+### 4.19 Configure "System Disk Size" **-Optional** <a id="systemDiskSize"></a>
+
+### 4.20 Configure "Assign Public Ip" <a id="publicIp"></a>
+Whether to set the public network ip
 
 ## STEP 4: Provision Nodes <a id="provisionNodes"></a>
 * After saving successfully, enter new nodes to add nodes. The initialization status is as follows:

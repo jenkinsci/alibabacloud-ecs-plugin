@@ -1,6 +1,9 @@
 package com.alibabacloud.jenkins.ecs;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,9 +19,6 @@ import com.alibabacloud.jenkins.ecs.util.AlibabaEcsFactory;
 import com.alibabacloud.jenkins.ecs.util.CloudHelper;
 import com.alibabacloud.jenkins.ecs.util.NetworkUtils;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeImagesRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse;
-import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse.Image;
 import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
 import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse.Region;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse;
@@ -120,10 +120,18 @@ public class AlibabaCloud extends Cloud {
      */
     private Boolean intranetMaster = Boolean.FALSE;
 
+    /**
+     * 标签
+     */
+    private List<AlibabaEcsTag> tags;
+
+
 
     private List<AlibabaEcsFollowerTemplate> templates;
 
     private transient AlibabaEcsClient connection;
+
+
 
     public static final String CLOUD_ID = "Alibaba Cloud ECS";
 
@@ -132,7 +140,7 @@ public class AlibabaCloud extends Cloud {
                         String image, String vpc, String securityGroup, String zone, String vsw, String instanceType,
                         int minimumNumberOfInstances, String initScript, String labelString, String remoteFs,
                         String systemDiskCategory, Integer systemDiskSize,
-                        Boolean attachPublicIp, Boolean intranetMaster) {
+                        Boolean attachPublicIp, Boolean intranetMaster, List<AlibabaEcsTag>tags) {
         super(StringUtils.isBlank(name) ? CLOUD_ID : name);
         this.credentialsId = credentialsId;
         this.sshKey = sshKey;
@@ -174,10 +182,13 @@ public class AlibabaCloud extends Cloud {
         this.systemDiskCategory = systemDiskCategory;
         this.systemDiskSize = systemDiskSize;
         this.attachPublicIp = attachPublicIp;
+        if (CollectionUtils.isNotEmpty(tags)){
+            this.tags = tags;
+        }
 
         AlibabaEcsFollowerTemplate template = new AlibabaEcsFollowerTemplate(region, zone, instanceType,
             minimumNumberOfInstances, vsw,
-            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp);
+            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp, tags);
         templates = Lists.newArrayList(template);
         readResolve();
     }
@@ -343,6 +354,10 @@ public class AlibabaCloud extends Cloud {
 
     public Boolean getAttachPublicIp() {
         return attachPublicIp;
+    }
+
+    public List<AlibabaEcsTag> getTags() {
+        return tags;
     }
 
     public Boolean getIntranetMaster() {

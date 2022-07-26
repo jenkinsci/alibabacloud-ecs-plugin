@@ -12,6 +12,7 @@
          * [导航到“Configure Clouds”](#cloudsMenu)
          * [添加新的云](#addNewCloud)
          * [配置“Cloud Name”](#cloudsName)
+         * [勾选“Jenkins Master In Private Network?“](#privateNetwork)
          * [配置“Credentials”](#configurAkSK)
             * [添加新凭据 **-必填**](#addNewCredentials)
             * [选择“Alibaba Cloud Credentials” **-必填**](#alibabaCloudCredentials)
@@ -30,6 +31,9 @@
          * [配置“Init Script” **-可选**](#configureInitScript)
          * [配置“Labels” **-可选**](#configureLabels)
          * [配置“Remote FS root” **-可选**](#remoteFSRoot)
+         * [配置“System Disk Category” **-可选-**](#systemDiskCategory)
+         * [配置“System Disk Size” **-可选-**](#systemDiskSize)
+         * [勾选“Assign Public Ip“](#publicIp)
       * [添加节点](#provisionNodes)
    * [故障排查](#troubleShooting)
    * [变更日志](#changeLog)
@@ -94,18 +98,26 @@ ECS插件安装完成后，导航至“管理Jenkins”>“管理节点和云”
 
 ![](docs/images/jenkins_configure_name.png)
 
-### 3.4 配置“Alibaba Cloud Credentials” <a id="configurAkSK"></a>
+### 3.4 勾选“Jenkins Master In Private Network” <a id="privateNetwork"></a>
+当前Jenkins Master是否部署在VPC内网环境中(即是否有访问公网的权限). 
+如果您的Jenkins Master部署在内网环境中(即没有访问公网权限), 请勾选此项, 后续插件调用阿里云SDK会使用VPC私网域名进行请求. 
+如果不勾选此项, 默认会使用公网域名进行访问, 会导致访问不通, 
+从而后续使用该插件会出现"ConnectTimeoutException"异常 如果在公网环境中(即有访问公网权限), 则无需勾选此项, 后续调用阿里云SDK会使用公网域名进行请求.
+
+
+
+### 3.5 配置“Alibaba Cloud Credentials” <a id="configurAkSK"></a>
 必须是有效的凭据。插件使用凭据（ak / sk）调用阿里云ECS OpenAPI，以将ECS创建为从节点。
 
-#### 3.4.1 添加新凭据**-必填** <a id="addNewCredentials"></a>
+#### 3.5.1 添加新凭据**-必填** <a id="addNewCredentials"></a>
 
 ![](docs/images/configure_credentials_1.png)
 
-#### 3.4.2 选择“Alibaba Cloud Credentials” **-必填** <a id="alibabaCloudCredentials"></a>
+#### 3.5.2 选择“Alibaba Cloud Credentials” **-必填** <a id="alibabaCloudCredentials"></a>
 
 ![](docs/images/jenkins_credentials_kind.png)
 
-#### 3.4.3 输入 "Access Key ID" & "Secret Access Key" **-必填** <a id="inputAkAndSk"></a>
+#### 3.5.3 输入 "Access Key ID" & "Secret Access Key" **-必填** <a id="inputAkAndSk"></a>
 * 输入您之前在 [前置条件](#Prerequisites) 创建的"Access Key ID" & "Secret Access Key"
 * 请确保您没有在下面列出任何警告：
 
@@ -115,34 +127,34 @@ ECS插件安装完成后，导航至“管理Jenkins”>“管理节点和云”
 
 ![](docs/images/jenkins.right.png)
 
-#### 3.4.4 配置“Alibaba Cloud Credentials” **-必填** <a id="configureCredentials"></a>
+#### 3.5.4 配置“Alibaba Cloud Credentials” **-必填** <a id="configureCredentials"></a>
 选择您刚刚创建的凭证
 
 ![](docs/images/jenkins.testCre.png)
 
-### 3.5 配置“Region” **-必填** <a id="configureRegion"></a>
+### 3.6 配置“Region” **-必填** <a id="configureRegion"></a>
 选择将在其中配置从ECS节点的正确区域。
 
 ![](docs/images/jenkins_configure_region.png)
 
-### 3.6 配置“Image” **-必填** <a id="configureImage"></a>
+### 3.7 配置“Image” **-必填** <a id="configureImage"></a>
 选择正确的镜像类型。
 
 ![](docs/images/jenkins_configure_image.png)
 
-### 3.7 配置“ VPC” **-可选** <a id="configureVpc"></a>
+### 3.8 配置“ VPC” **-可选** <a id="configureVpc"></a>
 如果所选区域中有任何VPC，它们将列在“ VPC”下拉列表中。并且如果未找到VPC，将使用172.16.0.0/12 CIDR块创建默认的VPC。
 
 ![](docs/images/jenkins_configure_vpc.png)
 
 
-### 3.8 配置“Security Group” **-可选** <a id="securityGroup"></a>
+### 3.9 配置“Security Group” **-可选** <a id="securityGroup"></a>
 如果所选区域中有任何安全组，它们将列在“安全组”下拉列表中。如果未找到安全组，将使用“ 22/22”端口范围访问权限创建默认安全。
 
 ![](docs/images/jenkins_configure_sg.png)
 
 
-### 3.9 配置“ ECS SSH密钥” **-必填** <a id="ecsSSHKey"></a>
+### 4.0 配置“ ECS SSH密钥” **-必填** <a id="ecsSSHKey"></a>
 * 输入在[步骤1：为ECS创建密钥对](#SSHKey)中获得的SSH密钥 
 * 当前，仅支持“带有私钥的SSH用户名”。
 
@@ -150,42 +162,51 @@ ECS插件安装完成后，导航至“管理Jenkins”>“管理节点和云”
 
 ![](docs/images/jenkins.SSH.png)
 
-### 3.10 "Test Connection" **-必填** <a id="testConnection"></a>
+### 4.10 "Test Connection" **-必填** <a id="testConnection"></a>
 在继续之前，您应该单击“测试连接”按钮进行彻底检查，并确保所有必需的项目都已成功配置。  
 
 ![](docs/images/jenkins.conn.png)
 
-### 3.11 配置“Availability Zone” **-可选** <a id="availableZone"></a>
+### 4.11 配置“Availability Zone” **-可选** <a id="availableZone"></a>
 选择将在其中配置从ECS节点的正确可用区域。如果未选择可用区域，则将选择一个随机区域。
 
 ![](docs/images/jenkins_configure_az.png)
 
 
-### 3.12 配置“ VSW” **-可选** <a id="configureVSW"></a>
+### 4.12 配置“ VSW” **-可选** <a id="configureVSW"></a>
 选择将在其中配置从ECS节点的右侧vsw。如果没有选择VSW，将创建一个与现有vsws不重叠的随机vsw。
 
 ![](docs/images/jenkins_configure_vsw.png)
 
-### 3.13 配置“Instance Type” **-可选** <a id="instanceType"></a>
+### 4.13 配置“Instance Type” **-可选** <a id="instanceType"></a>
 Select the right instance type that the slave ECS node will be provisioned. And if no instance type selected, a random instance type will be selected.
 
 ![](docs/images/jenkins_configure_flavor.png)
 
-### 3.14 配置 "Minimum number of instances" **-可选** <a id="minimumNumberOfInstance"></a>
+### 4.14 配置 "Minimum number of instances" **-可选** <a id="minimumNumberOfInstance"></a>
 最小实例数是用于生成关注者的关注者节点的数量。
 此插件将根据填写的数字创建子节点。该数字至少应为1
 
 ![](docs/images/jenkins_configure_instance_count.png)
 
 
-### 3.15 配置 "Init Script" **-可选** <a id="configureInitScript"></a>
+### 4.15 配置 "Init Script" **-可选** <a id="configureInitScript"></a>
 Init脚本是在Jenkins开始启动跟随者节点之前在新启动的跟随者节点实例上运行的Shell脚本。
 这也是安装构建和测试所需的其他软件包的好地方。
 
-### 3.16 配置 "Labels" **-可选** <a id="configureLabels"></a>
+### 4.16 配置 "Labels" **-可选** <a id="configureLabels"></a>
 
-### 3.17 配置 "Remote FS root" **-可选** <a id="remoteFSRoot"></a>
+### 4.17 配置 "Remote FS root" **-可选** <a id="remoteFSRoot"></a>
 
+* [配置“System Disk Size” **-可选-**](#systemDiskSize)
+* [勾选 Assign Public Ip](#publicIp)
+
+### 4.18 配置 "System Disk Category" <a id="systemDiskCategory"></a>
+ 
+### 4.19 配置 "System Disk Size" <a id = "systemDiskSize"></a>
+
+### 4.20 勾选 "Assign Public Ip" <a id = "publicIp"></a>
+是否设置公网ip
 
 ## 步骤4: 添加节点 <a id="provisionNodes"></a>
 * 保存成功后，输入新节点以添加节点。初始化状态如下：

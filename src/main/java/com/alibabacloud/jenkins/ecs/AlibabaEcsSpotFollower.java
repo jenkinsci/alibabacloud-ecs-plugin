@@ -22,7 +22,6 @@ import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -41,6 +40,7 @@ public class AlibabaEcsSpotFollower extends Slave {
     private String publicIp;
     private String keyPairName;
     private String initScript;
+
 
     private boolean isConnected = false;
 
@@ -73,6 +73,7 @@ public class AlibabaEcsSpotFollower extends Slave {
             publicIp = publicIpAddress.get(0);
         }
         keyPairName = instance.getKeyPairName();
+
     }
 
     @DataBoundConstructor

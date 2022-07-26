@@ -1,7 +1,10 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.util.List;
+
 import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials;
 import com.alibabacloud.credentials.plugin.util.CredentialsHelper;
+import com.google.common.collect.Lists;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,9 +38,10 @@ public class AlibabaCloudTest {
         PowerMockito.mockStatic(CredentialsHelper.class);
         BDDMockito.given(CredentialsHelper.getCredentials(credentialsId)).willReturn(credentials);
         when(CredentialsHelper.getCredentials(credentialsId)).thenReturn(credentials);
-
+        List<AlibabaEcsTag> tags = Lists.newArrayList();
         AlibabaCloud cloud = new AlibabaCloud("testCloud", credentialsId, sshKey, "cn-beijing", "centos", "test-vpc",
-            "test-sg", "cn-beijing-a", "test-vsw", "ecs.c5.large", 1, "", "", "", "", 20, false, false);
+            "test-sg", "cn-beijing-a", "test-vsw", "ecs.c5.large", 1,
+            "", "", "", "", 20, false, false, tags);
         assertNotNull(cloud);
     }
 }

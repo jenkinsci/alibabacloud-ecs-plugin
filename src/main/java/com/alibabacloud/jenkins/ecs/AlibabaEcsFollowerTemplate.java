@@ -6,6 +6,7 @@ import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
 import com.alibabacloud.jenkins.ecs.exception.AlibabaEcsException;
 import com.alibabacloud.jenkins.ecs.util.CloudHelper;
 import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
+import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest.Tag;
 import com.google.common.collect.Lists;
 import hudson.Extension;
 import hudson.model.Describable;
@@ -50,6 +51,11 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
      */
     private Boolean attachPublicIp = Boolean.TRUE;
 
+    /**
+     * 标签
+     */
+    private List<AlibabaEcsTag> tags;
+
     private int minimumNumberOfInstances;
 
     private transient AlibabaCloud parent;
@@ -70,7 +76,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs,
                                       String systemDiskCategory, Integer systemDiskSize,
-                                      Boolean attachPublicIp) {
+                                      Boolean attachPublicIp, List<AlibabaEcsTag> tags) {
         this.region = region;
         this.zone = zone;
         this.instanceType = instanceType;
@@ -84,6 +90,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.systemDiskSize = systemDiskSize;
         if (attachPublicIp != null) {
             this.attachPublicIp = attachPublicIp;
+        }
+        if (CollectionUtils.isNotEmpty(tags)){
+            this.tags = tags;
         }
     }
 
@@ -136,6 +145,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return remoteFs;
     }
 
+
     public List<AlibabaEcsSpotFollower> provision(int amount) throws Exception {
         List<AlibabaEcsSpotFollower> list = Lists.newArrayList();
         List<String> instanceIds = provisionSpot(amount);
@@ -181,12 +191,30 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             request.setInternetMaxBandwidthIn(10);
             request.setInternetMaxBandwidthOut(10);
         }
+        request.setTags(buildEcsTags());
         List<String> instanceIdSets = connect.runInstances(request);
         if (CollectionUtils.isEmpty(instanceIdSets)
             || StringUtils.isBlank(instanceIdSets.get(0))) {
             throw new AlibabaEcsException("provision error");
         }
         return instanceIdSets;
+    }
+
+    private List<Tag> buildEcsTags() {
+        List<RunInstancesRequest.Tag> ecsTags = Lists.newArrayList();
+        if (CollectionUtils.isNotEmpty(tags)) {
+            for (AlibabaEcsTag alibabaEcsTag : tags) {
+                Tag tag = new Tag();
+                tag.setKey(alibabaEcsTag.getName());
+                tag.setValue(alibabaEcsTag.getValue());
+                ecsTags.add(tag);
+            }
+        }
+        Tag tag = new Tag();
+        tag.setKey(AlibabaEcsTag.TAG_NAME_CREATED_FROM);
+        tag.setValue(AlibabaEcsTag.TAG_VALUE_JENKINS_PLUGIN);
+        ecsTags.add(tag);
+        return ecsTags;
     }
 
     @Extension
