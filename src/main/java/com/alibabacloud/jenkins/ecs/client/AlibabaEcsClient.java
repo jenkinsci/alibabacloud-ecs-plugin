@@ -54,10 +54,12 @@ import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
 import com.aliyuncs.ecs.model.v20140526.RunInstancesResponse;
 import com.aliyuncs.ecs.model.v20140526.StopInstanceRequest;
 import com.aliyuncs.ecs.model.v20140526.StopInstanceResponse;
+import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.FormatType;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.profile.IClientProfile;
 import com.google.common.collect.Lists;
+import hudson.util.FormValidation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -455,6 +457,33 @@ public class AlibabaEcsClient {
             log.error("runInstances error. request: {}", JSON.toJSONString(request), e);
         }
         return Lists.newArrayList();
+    }
+
+    public FormValidation druRunInstances(RunInstancesRequest request) {
+        try {
+            List<RunInstancesRequest.Tag> tags = Lists.newArrayList();
+            RunInstancesRequest.Tag tag = new RunInstancesRequest.Tag();
+            tag.setKey("CreatedFrom");
+            tag.setValue("jenkins-plugin");
+            tags.add(tag);
+            request.setTags(tags);
+            request.setAcceptFormat(FormatType.JSON);
+            request.setInstanceChargeType("PostPaid");
+            request.setSpotStrategy("SpotAsPriceGo");
+            request.setIoOptimized("optimized");
+            request.setDryRun(true);
+
+            RunInstancesResponse acsResponse = client.getAcsResponse(request);
+            log.info("druRunInstances success. acsResponse: {}", JSON.toJSONString(acsResponse));
+            return FormValidation.ok("success.");
+        } catch (ClientException e) {
+            if ("DryRunOperation".equals(e.getErrCode())) {
+                log.info("druRunInstances success. acsResponse: {}", JSON.toJSONString(request));
+                return FormValidation.ok("success.");
+            }
+            log.error("druRunInstances error:{}. request: {}", e, JSON.toJSONString(request));
+            return FormValidation.error("error：" + e);
+        }
     }
 
     public String allocatePublicIp(String instanceId) {

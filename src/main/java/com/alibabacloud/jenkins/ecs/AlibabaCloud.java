@@ -1,14 +1,14 @@
 package com.alibabacloud.jenkins.ecs;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.CheckForNull;
 
+import com.alibaba.fastjson.JSON;
 import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials;
 import com.alibabacloud.credentials.plugin.auth.AlibabaKeyPairUtils;
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
@@ -27,6 +27,9 @@ import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse.VSwitch;
 import com.aliyuncs.ecs.model.v20140526.DescribeVpcsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVpcsResponse.Vpc;
+import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
+import com.aliyuncs.ecs.model.v20140526.RunInstancesResponse;
+import com.aliyuncs.exceptions.ClientException;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -848,6 +851,41 @@ public class AlibabaCloud extends Cloud {
                                        @QueryParameter String region) {
             // TODO: use param to dryrun create instance
             return FormValidation.ok();
+        }
+
+        @RequirePOST
+        public FormValidation doDryRunInstance(@QueryParameter String credentialsId, @QueryParameter Boolean intranetMaster,
+                                                     @QueryParameter String region, @QueryParameter String image, @QueryParameter String vpc, @QueryParameter String securityGroup,
+                                                     @QueryParameter String zone, @QueryParameter String vsw, @QueryParameter String instanceType,
+                                                     @QueryParameter  Integer minimumNumberOfInstances, @QueryParameter String initScript, @QueryParameter String labelString, @QueryParameter String remoteFs,
+                                                     @QueryParameter  String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter Boolean attachPublicIp) {
+            log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}",credentialsId, intranetMaster, region);
+            if (StringUtils.isBlank(credentialsId)) {
+                return FormValidation.error("credentialsId is null");
+            }
+            AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
+            if (credentials == null) {
+                log.error(
+                        "doDryRunInstance error. credentials not found. region: {} credentialsId: {}",
+                        region, credentialsId);
+                return FormValidation.error("Credentials not found");
+            }
+            AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
+            RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
+            runInstancesRequest.setRegionId(region);
+            runInstancesRequest.setImageId(image);
+            runInstancesRequest.setSecurityGroupId(securityGroup);
+            runInstancesRequest.setZoneId(zone);
+            runInstancesRequest.setVSwitchId(vsw);
+            runInstancesRequest.setInstanceType(instanceType);
+            runInstancesRequest.setMinAmount(minimumNumberOfInstances);
+            runInstancesRequest.setSystemDiskCategory(systemDiskCategory);
+            runInstancesRequest.setSystemDiskSize(systemDiskSize);
+            if (attachPublicIp) {
+                runInstancesRequest.setInternetMaxBandwidthOut(10);
+            }
+            log.info("doDryRunInstance dryRun param runInstancesRequest:{}", JSON.toJSONString(runInstancesRequest));
+            return client.druRunInstances(runInstancesRequest);
         }
     }
 

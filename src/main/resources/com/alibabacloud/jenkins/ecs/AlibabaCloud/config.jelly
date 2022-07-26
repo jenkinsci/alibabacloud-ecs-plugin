@@ -77,6 +77,8 @@
         <f:repeatable field="tags">
             <st:include page="config.jelly" class="${descriptor.clazz}"/>
         </f:repeatable>
-     </f:entry>
+    </f:entry>
+    <f:validateButton title="${%dryRunInstance}" progress="${%Runing...}" method="dryRunInstance"
+                         with="credentialsId,intranetMaster,region,image,vpc,securityGroup,zone,vsw,instanceType,minimumNumberOfInstances,initScript,labelString,remoteFs,systemDiskCategory,systemDiskSize,attachPublicIp"/>
 
 </j:jelly>
