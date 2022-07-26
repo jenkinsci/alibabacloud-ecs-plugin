@@ -442,8 +442,6 @@ public class AlibabaEcsClient {
 
     public List<String> runInstances(RunInstancesRequest request) {
         try {
-            List<RunInstancesRequest.Tag> tags = Lists.newArrayList();
-            RunInstancesRequest.Tag tag = new RunInstancesRequest.Tag();
             request.setAcceptFormat(FormatType.JSON);
             request.setInstanceChargeType("PostPaid");
             request.setSpotStrategy("SpotAsPriceGo");
