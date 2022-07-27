@@ -443,10 +443,8 @@ public class AlibabaEcsClient {
     public List<String> runInstances(RunInstancesRequest request) {
         try {
             request.setAcceptFormat(FormatType.JSON);
-            request.setInstanceChargeType("PostPaid");
-            request.setSpotStrategy("SpotAsPriceGo");
             request.setIoOptimized("optimized");
-
+            request.setInstanceChargeType("PostPaid");
             RunInstancesResponse acsResponse = client.getAcsResponse(request);
             List<String> instanceIdSets = acsResponse.getInstanceIdSets();
             log.info("runInstances success. instanceIdSets: {}", JSON.toJSONString(instanceIdSets));
@@ -466,9 +464,8 @@ public class AlibabaEcsClient {
             tags.add(tag);
             request.setTags(tags);
             request.setAcceptFormat(FormatType.JSON);
-            request.setInstanceChargeType("PostPaid");
-            request.setSpotStrategy("SpotAsPriceGo");
             request.setIoOptimized("optimized");
+            request.setInstanceChargeType("PostPaid");
             request.setDryRun(true);
 
             RunInstancesResponse acsResponse = client.getAcsResponse(request);
