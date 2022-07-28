@@ -56,9 +56,18 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
      */
     private List<AlibabaEcsTag> tags;
 
+    /**
+     * 实例付费类型
+     */
+    private String chargeType;
+
     private int minimumNumberOfInstances;
 
     private transient AlibabaCloud parent;
+
+    public static final String SPOT_INSTANCE_CHARGE_TYPE= "Spot";
+
+
 
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs) {
@@ -76,7 +85,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs,
                                       String systemDiskCategory, Integer systemDiskSize,
-                                      Boolean attachPublicIp, List<AlibabaEcsTag> tags) {
+                                      Boolean attachPublicIp, List<AlibabaEcsTag> tags, String chargeType) {
         this.region = region;
         this.zone = zone;
         this.instanceType = instanceType;
@@ -88,6 +97,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.remoteFs = remoteFs;
         this.systemDiskCategory = systemDiskCategory;
         this.systemDiskSize = systemDiskSize;
+        this.chargeType = chargeType;
         if (attachPublicIp != null) {
             this.attachPublicIp = attachPublicIp;
         }
@@ -141,6 +151,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return labelString;
     }
 
+    public String getChargeType() {
+        return chargeType;
+    }
+
     public String getRemoteFs() {
         return remoteFs;
     }
@@ -192,6 +206,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             request.setInternetMaxBandwidthOut(10);
         }
         request.setTags(buildEcsTags());
+        if (SPOT_INSTANCE_CHARGE_TYPE.equals(chargeType)){
+            request.setSpotStrategy("SpotAsPriceGo");
+        }
         List<String> instanceIdSets = connect.runInstances(request);
         if (CollectionUtils.isEmpty(instanceIdSets)
             || StringUtils.isBlank(instanceIdSets.get(0))) {

@@ -128,28 +128,35 @@ public class AlibabaCloud extends Cloud {
      */
     private List<AlibabaEcsTag> tags;
 
+    /**
+     * 实例付费类型
+     */
+    private String chargeType;
 
 
     private List<AlibabaEcsFollowerTemplate> templates;
 
     private transient AlibabaEcsClient connection;
 
-
-
     public static final String CLOUD_ID = "Alibaba Cloud ECS";
+
+    public static final String SPOT_INSTANCE_CHARGE_TYPE= "Spot";
+
+    public static final String ON_DEMAND_INSTANCE_CHARGE_TYPE = "OnDemand";
 
     @DataBoundConstructor
     public AlibabaCloud(String name, String credentialsId, String sshKey, String region,
                         String image, String vpc, String securityGroup, String zone, String vsw, String instanceType,
                         int minimumNumberOfInstances, String initScript, String labelString, String remoteFs,
                         String systemDiskCategory, Integer systemDiskSize,
-                        Boolean attachPublicIp, Boolean intranetMaster, List<AlibabaEcsTag>tags) {
+                        Boolean attachPublicIp, Boolean intranetMaster, List<AlibabaEcsTag>tags, String chargeType) {
         super(StringUtils.isBlank(name) ? CLOUD_ID : name);
         this.credentialsId = credentialsId;
         this.sshKey = sshKey;
         this.region = region;
         this.image = image;
         this.intranetMaster = intranetMaster;
+        this.chargeType = chargeType;
 
         if (StringUtils.isNotBlank(remoteFs)) {
             this.remoteFs = remoteFs;
@@ -191,7 +198,7 @@ public class AlibabaCloud extends Cloud {
 
         AlibabaEcsFollowerTemplate template = new AlibabaEcsFollowerTemplate(region, zone, instanceType,
             minimumNumberOfInstances, vsw,
-            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp, tags);
+            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp, tags, chargeType);
         templates = Lists.newArrayList(template);
         readResolve();
     }
@@ -847,18 +854,31 @@ public class AlibabaCloud extends Cloud {
         }
 
         @RequirePOST
+        public ListBoxModel doFillChargeTypeItems() {
+            Jenkins.get().checkPermission(Permission.CREATE);
+            Jenkins.get().checkPermission(Permission.UPDATE);
+            ListBoxModel model = new ListBoxModel();
+            model.add("Spot Instance", SPOT_INSTANCE_CHARGE_TYPE);
+            model.add("On Demand", ON_DEMAND_INSTANCE_CHARGE_TYPE);
+            return model;
+        }
+
+
+        @RequirePOST
         public FormValidation doDryRun(@QueryParameter String credentialsId, @QueryParameter String sshKey,
                                        @QueryParameter String region) {
             // TODO: use param to dryrun create instance
             return FormValidation.ok();
         }
 
+
+
         @RequirePOST
         public FormValidation doDryRunInstance(@QueryParameter String credentialsId, @QueryParameter Boolean intranetMaster,
                                                      @QueryParameter String region, @QueryParameter String image, @QueryParameter String vpc, @QueryParameter String securityGroup,
                                                      @QueryParameter String zone, @QueryParameter String vsw, @QueryParameter String instanceType,
                                                      @QueryParameter  Integer minimumNumberOfInstances, @QueryParameter String initScript, @QueryParameter String labelString, @QueryParameter String remoteFs,
-                                                     @QueryParameter  String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter Boolean attachPublicIp) {
+                                                     @QueryParameter  String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter Boolean attachPublicIp, @QueryParameter String chargeType) {
             log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}",credentialsId, intranetMaster, region);
             if (StringUtils.isBlank(credentialsId)) {
                 return FormValidation.error("credentialsId is null");
@@ -872,6 +892,9 @@ public class AlibabaCloud extends Cloud {
             }
             AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
             RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
+            if (SPOT_INSTANCE_CHARGE_TYPE.equals(chargeType)){
+                runInstancesRequest.setSpotStrategy("SpotAsPriceGo");
+            }
             runInstancesRequest.setRegionId(region);
             runInstancesRequest.setImageId(image);
             runInstancesRequest.setSecurityGroupId(securityGroup);

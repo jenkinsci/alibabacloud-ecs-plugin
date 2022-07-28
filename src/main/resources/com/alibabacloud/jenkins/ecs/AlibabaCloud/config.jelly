@@ -42,7 +42,9 @@
     <f:entry title="${%Availability Zone}" field="zone">
         <f:select default="${it.zone}"/>
     </f:entry>
-
+    <f:entry title="${%Instance Charge Type}" field="chargeType">
+        <f:select />
+    </f:entry>
     <f:entry title="${%VSW}" field="vsw">
         <f:select default="${it.vswId}"/>
     </f:entry>
@@ -79,6 +81,6 @@
         </f:repeatable>
     </f:entry>
     <f:validateButton title="${%dryRunInstance}" progress="${%Runing...}" method="dryRunInstance"
-                         with="credentialsId,intranetMaster,region,image,vpc,securityGroup,zone,vsw,instanceType,minimumNumberOfInstances,initScript,labelString,remoteFs,systemDiskCategory,systemDiskSize,attachPublicIp"/>
+                         with="credentialsId,intranetMaster,region,image,vpc,securityGroup,zone,vsw,instanceType,minimumNumberOfInstances,initScript,labelString,remoteFs,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType"/>
 
 </j:jelly>
