@@ -51,7 +51,7 @@ public class AlibabaEcsFollowerTemplateTest {
     @Test
     public void provisionSpotTest() throws Exception {
         AlibabaEcsFollowerTemplate alibabaEcsFollowerTemplate = new AlibabaEcsFollowerTemplate("cn-beijing", "cn-beijing-a", "ecs.sn1.large", 1, "vsw-aaa", "",
-            "", "/root");
+            "", "/root", "seffaeff");
 
         alibabaEcsFollowerTemplate.setParent(alibabaCloud);
 

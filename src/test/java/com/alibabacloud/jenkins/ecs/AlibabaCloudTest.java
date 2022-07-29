@@ -41,7 +41,7 @@ public class AlibabaCloudTest {
         List<AlibabaEcsTag> tags = Lists.newArrayList();
         AlibabaCloud cloud = new AlibabaCloud("testCloud", credentialsId, sshKey, "cn-beijing", "centos", "test-vpc",
             "test-sg", "cn-beijing-a", "test-vsw", "ecs.c5.large", 1,
-            "", "", "", "", 20, false, false, tags ,"Spot");
+            "", "", "", "", 20, false, false, tags ,"Spot", "userData");
         assertNotNull(cloud);
     }
 }

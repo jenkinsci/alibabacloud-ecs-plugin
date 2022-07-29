@@ -35,6 +35,9 @@
                 <f:entry title="${%Init Script}" field="initScript">
                     <f:textarea/>
                 </f:entry>
+                <f:entry title="UserData" field="userData">
+                    <f:textarea value="${instance.userData}"/>
+                </f:entry>
                 <f:entry title="Labels" field="labelString">
                     <f:textbox/>
                 </f:entry>

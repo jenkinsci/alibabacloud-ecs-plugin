@@ -40,6 +40,7 @@ public class AlibabaEcsSpotFollower extends Slave {
     private String publicIp;
     private String keyPairName;
     private String initScript;
+    private String userData;
 
 
     private boolean isConnected = false;
@@ -47,13 +48,14 @@ public class AlibabaEcsSpotFollower extends Slave {
     public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher,
                                   String remoteFS,
                                   @Nonnull String cloudName, String labelString, String initScript,
-                                  @Nonnull String templateId)
+                                  @Nonnull String templateId, String userData)
         throws IOException, FormException {
         super(name, remoteFS, launcher);
         this.ecsInstanceId = ecsInstanceId;
         this.cloudName = cloudName;
         this.initScript = initScript;
         this.templateId = templateId;
+        this.userData = StringUtils.trimToEmpty(userData);
         setLabelString(labelString);
         DescribeInstancesResponse.Instance instance = describeNode();
         if (null == instance) {
@@ -79,11 +81,11 @@ public class AlibabaEcsSpotFollower extends Slave {
     @DataBoundConstructor
     public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, String remoteFS,
                                   @Nonnull String cloudName, String labelString, String initScript,
-                                  @Nonnull String templateId)
+                                  @Nonnull String templateId, String userData)
         throws FormException, IOException {
         // TODO: create Launcher by ami type
         this(ecsInstanceId, name, new AlibabaEcsUnixComputerLauncher(), remoteFS, cloudName, labelString, initScript,
-            templateId);
+            templateId, userData);
     }
 
     @Override
@@ -211,6 +213,10 @@ public class AlibabaEcsSpotFollower extends Slave {
 
     public String getInitScript() {
         return initScript;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public boolean stop() {

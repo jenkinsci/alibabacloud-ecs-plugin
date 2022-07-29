@@ -2,6 +2,7 @@ package com.alibabacloud.jenkins.ecs;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -93,6 +94,7 @@ public class AlibabaCloud extends Cloud {
     private String instanceType;
     private String remoteFs;
     private String initScript;
+    private String userData;
     private String labelString;
     private int minimumNumberOfInstances;
 
@@ -149,7 +151,7 @@ public class AlibabaCloud extends Cloud {
                         String image, String vpc, String securityGroup, String zone, String vsw, String instanceType,
                         int minimumNumberOfInstances, String initScript, String labelString, String remoteFs,
                         String systemDiskCategory, Integer systemDiskSize,
-                        Boolean attachPublicIp, Boolean intranetMaster, List<AlibabaEcsTag>tags, String chargeType) {
+                        Boolean attachPublicIp, Boolean intranetMaster, List<AlibabaEcsTag>tags, String chargeType, String userData) {
         super(StringUtils.isBlank(name) ? CLOUD_ID : name);
         this.credentialsId = credentialsId;
         this.sshKey = sshKey;
@@ -188,6 +190,7 @@ public class AlibabaCloud extends Cloud {
         this.instanceType = instanceType;
         this.minimumNumberOfInstances = minimumNumberOfInstances;
         this.initScript = initScript;
+        this.userData = StringUtils.trimToEmpty(userData);
         this.labelString = labelString;
         this.systemDiskCategory = systemDiskCategory;
         this.systemDiskSize = systemDiskSize;
@@ -198,7 +201,7 @@ public class AlibabaCloud extends Cloud {
 
         AlibabaEcsFollowerTemplate template = new AlibabaEcsFollowerTemplate(region, zone, instanceType,
             minimumNumberOfInstances, vsw,
-            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp, tags, chargeType);
+            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp, tags, chargeType, userData);
         templates = Lists.newArrayList(template);
         readResolve();
     }
@@ -267,6 +270,10 @@ public class AlibabaCloud extends Cloud {
 
     public String getInitScript() {
         return initScript;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public String getLabelString() {
@@ -878,7 +885,7 @@ public class AlibabaCloud extends Cloud {
                                                      @QueryParameter String region, @QueryParameter String image, @QueryParameter String vpc, @QueryParameter String securityGroup,
                                                      @QueryParameter String zone, @QueryParameter String vsw, @QueryParameter String instanceType,
                                                      @QueryParameter  Integer minimumNumberOfInstances, @QueryParameter String initScript, @QueryParameter String labelString, @QueryParameter String remoteFs,
-                                                     @QueryParameter  String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter Boolean attachPublicIp, @QueryParameter String chargeType) {
+                                                     @QueryParameter  String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter Boolean attachPublicIp, @QueryParameter String chargeType, @QueryParameter String userData) {
             log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}",credentialsId, intranetMaster, region);
             if (StringUtils.isBlank(credentialsId)) {
                 return FormValidation.error("credentialsId is null");
@@ -904,6 +911,9 @@ public class AlibabaCloud extends Cloud {
             runInstancesRequest.setMinAmount(minimumNumberOfInstances);
             runInstancesRequest.setSystemDiskCategory(systemDiskCategory);
             runInstancesRequest.setSystemDiskSize(systemDiskSize);
+            if (StringUtils.isNotBlank(userData)) {
+                runInstancesRequest.setUserData(Base64.getEncoder().encodeToString(userData.getBytes(StandardCharsets.UTF_8)));
+            }
             if (attachPublicIp) {
                 runInstancesRequest.setInternetMaxBandwidthOut(10);
             }

@@ -1,5 +1,7 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 
 import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
@@ -28,6 +30,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     private String instanceType;
     private String vswId;
     private String initScript;
+    private String userData;
     private String labelString;
     private String remoteFs;
     /**
@@ -70,7 +73,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
 
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
-                                      String vsw, String initScript, String labelString, String remoteFs) {
+                                      String vsw, String initScript, String labelString, String remoteFs, String userData) {
         this.region = region;
         this.zone = zone;
         this.instanceType = instanceType;
@@ -78,6 +81,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.minimumNumberOfInstances = minimumNumberOfInstances;
         this.vswId = vsw;
         this.initScript = initScript;
+        this.userData = StringUtils.trimToEmpty(userData);
         this.labelString = labelString;
         this.remoteFs = remoteFs;
     }
@@ -85,7 +89,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs,
                                       String systemDiskCategory, Integer systemDiskSize,
-                                      Boolean attachPublicIp, List<AlibabaEcsTag> tags, String chargeType) {
+                                      Boolean attachPublicIp, List<AlibabaEcsTag> tags, String chargeType, String userData) {
         this.region = region;
         this.zone = zone;
         this.instanceType = instanceType;
@@ -93,6 +97,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.minimumNumberOfInstances = minimumNumberOfInstances;
         this.vswId = vsw;
         this.initScript = initScript;
+        this.userData = StringUtils.trimToEmpty(userData);
         this.labelString = labelString;
         this.remoteFs = remoteFs;
         this.systemDiskCategory = systemDiskCategory;
@@ -155,6 +160,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return chargeType;
     }
 
+    public String getUserData() {
+        return userData;
+    }
+
     public String getRemoteFs() {
         return remoteFs;
     }
@@ -167,7 +176,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId,
                 templateId + "-" + instanceId,
                 remoteFs,
-                parent.getDisplayName(), labelString, initScript, getTemplateId());
+                parent.getDisplayName(), labelString, initScript, getTemplateId(), userData);
             list.add(alibabaEcsSpotFollower);
         }
         return list;
@@ -195,6 +204,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         request.setAmount(amount);
         request.setKeyPairName(keyPairName);
         request.setInstanceType(instanceType);
+        if (StringUtils.isNotBlank(userData)) {
+            String uData = Base64.getEncoder().encodeToString(userData.getBytes(StandardCharsets.UTF_8));
+            request.setUserData(uData);
+        }
         if(StringUtils.isNotBlank(systemDiskCategory)) {
             request.setSystemDiskCategory(systemDiskCategory);
         }

@@ -56,6 +56,9 @@
     <f:entry title="${%Minimum number of instances}" field="minimumNumberOfInstances">
         <f:textbox/>
     </f:entry>
+    <f:entry title="${%UserData}" field="userData">
+        <f:textarea/>
+    </f:entry>
     <f:entry title="${%Init Script}" field="initScript">
         <f:textarea/>
     </f:entry>
@@ -81,6 +84,6 @@
         </f:repeatable>
     </f:entry>
     <f:validateButton title="${%dryRunInstance}" progress="${%Runing...}" method="dryRunInstance"
-                         with="credentialsId,intranetMaster,region,image,vpc,securityGroup,zone,vsw,instanceType,minimumNumberOfInstances,initScript,labelString,remoteFs,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType"/>
+                         with="credentialsId,intranetMaster,region,image,vpc,securityGroup,zone,vsw,instanceType,minimumNumberOfInstances,initScript,labelString,remoteFs,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData"/>
 
 </j:jelly>
