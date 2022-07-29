@@ -1,9 +1,5 @@
 package com.alibabacloud.jenkins.ecs;
 
-import java.util.Collections;
-import java.util.List;
-
-
 import com.google.common.collect.Lists;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -18,6 +14,9 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.when;
  * Created by kunlun.ykl on 2020/9/27.
  */
 @PowerMockIgnore(
-    {"javax.crypto.*", "org.hamcrest.*", "javax.net.ssl.*", "com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*"})
+        {"javax.crypto.*", "org.hamcrest.*", "javax.net.ssl.*", "com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*"})
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AlibabaEcsSpotFollower.class, AlibabaEcsFollowerTemplate.class})
 public class AlibabaEcsStepTest {
@@ -52,16 +51,16 @@ public class AlibabaEcsStepTest {
 
         when(follower.getNodeName()).thenReturn("nodeName");
         List<AlibabaEcsSpotFollower> slaves = Collections.singletonList(follower);
-        when(template.provision(anyInt())).thenReturn(slaves);
+        when(template.provision(anyInt(), true)).thenReturn(slaves);
     }
 
     @Test
     public void bootInstance() throws Exception {
         WorkflowJob boot = r.jenkins.createProject(WorkflowJob.class, "AlibabaCloudEcsTest");
         boot.setDefinition(new CpsFlowDefinition(
-            " node('master') {\n" +
-                "    def X = alibabaEcs cloud: 'Alibaba Cloud ECS', template: 'cn-beijing-h-ecs.g5.large'\n" +
-                "}", true));
+                " node('master') {\n" +
+                        "    def X = alibabaEcs cloud: 'Alibaba Cloud ECS', template: 'cn-beijing-h-ecs.g5.large'\n" +
+                        "}", true));
         WorkflowRun b = r.assertBuildStatusSuccess(boot.scheduleBuild2(0));
         r.assertLogContains("SUCCESS", b);
     }

@@ -1,9 +1,5 @@
 package com.alibabacloud.jenkins.ecs;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import com.alibabacloud.jenkins.ecs.util.CloudHelper;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse.Instance;
 import hudson.Extension;
@@ -13,13 +9,15 @@ import hudson.slaves.Cloud;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
-import org.jenkinsci.plugins.workflow.steps.Step;
-import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
-import org.jenkinsci.plugins.workflow.steps.StepExecution;
-import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
+import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import static com.alibabacloud.jenkins.ecs.AlibabaCloud.CLOUD_ID_PREFIX;
 
 /**
  * Returns the instance provisioned. Returns the instance provisioned.
@@ -81,9 +79,9 @@ public class AlibabaEcsStep extends Step {
             ListBoxModel r = new ListBoxModel();
             for (Cloud cList : jenkins.model.Jenkins.get().clouds) {
                 if (cList.getDisplayName().equals(cloud)) {
-                    List<AlibabaEcsFollowerTemplate> templates = ((AlibabaCloud)cList).getTemplates();
+                    List<AlibabaEcsFollowerTemplate> templates = ((AlibabaCloud) cList).getTemplates();
                     for (AlibabaEcsFollowerTemplate template : templates) {
-                        r.add(template.getTemplateId(), template.getTemplateId());
+                        r.add(template.getTemplateName(), template.getTemplateName());
                     }
                 }
             }
@@ -109,26 +107,27 @@ public class AlibabaEcsStep extends Step {
 
         @Override
         protected Instance run() throws Exception {
-            Cloud cl = CloudHelper.getCloud(cloud);
+
+            String cloudName = cloud.substring(CLOUD_ID_PREFIX.length());
+
+            AlibabaCloud cl = CloudHelper.getCloud(cloudName);
             if (null == cl) {
                 throw new IllegalArgumentException(
-                    "Error in Alibaba Cloud. Please review Alibaba ECS settings in Jenkins configuration.");
+                        "Error in Alibaba Cloud. Please review Alibaba ECS settings in Jenkins configuration.");
             }
 
-            AlibabaEcsFollowerTemplate t;
-            t = ((AlibabaCloud)cl).getTemplate(template);
+            AlibabaEcsFollowerTemplate t = cl.getTemplate(template);
             if (null == t) {
                 throw new IllegalArgumentException(
-                    "Error in Alibaba Cloud. Please review Alibaba ECS template defined in Jenkins configuration.");
+                        "Error in Alibaba Cloud. Please review Alibaba ECS template defined in Jenkins configuration.");
             }
-            List<AlibabaEcsSpotFollower> instances = t.provision(1);
+            List<AlibabaEcsSpotFollower> instances = t.provision(1, cl.getAttachPublicIp());
             if (instances == null) {
                 throw new IllegalArgumentException(
-                    "Error in Alibaba Cloud. Please review Alibaba ECS defined in Jenkins configuration.");
+                        "Error in Alibaba Cloud. Please review Alibaba ECS defined in Jenkins configuration.");
             }
-
             AlibabaEcsSpotFollower follower = instances.get(0);
-            return follower.describeNode();
+            return CloudHelper.getInstanceWithRetry(follower);
         }
     }
 }

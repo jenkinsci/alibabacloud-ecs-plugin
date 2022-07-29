@@ -1,0 +1,6 @@
+<div>
+    Whether the current Jenkins Master is deployed in the VPC intranet environment (that is, whether it has access to the public network).
+    <li>If Jenkins Master is deployed in the intranet environment (that is, Jenkins Master do not have access to the public network), please check this option, and the subsequent plug-in calls to Alibaba Cloud SDK will use the VPC Private EndPoint name for requests.</li>
+    <li>If Jenkins Master is in a public network environment (that is, you have access to the public network), you do not need to check this option. Subsequent calls to the Alibaba Cloud SDK will use the public Endpoint for requests.</li>
+    <li><font color="red">If you do not check this option, public API Endpoint will be used for access by default, which may lead to unreachable access, so the "ConnectTimeoutException" exception will occur when the plug-in is used later.</font></li>
+</div>

@@ -1,14 +1,8 @@
 package com.alibabacloud.jenkins.ecs;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
 import com.alibabacloud.jenkins.ecs.exception.AlibabaEcsException;
+import com.alibabacloud.jenkins.ecs.util.LogHelper;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
 import com.trilead.ssh2.ServerHostKeyVerifier;
@@ -17,11 +11,13 @@ import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.slaves.CommandLauncher;
 import hudson.slaves.SlaveComputer;
-import com.alibabacloud.jenkins.ecs.util.LogHelper;
 import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by kunlun.ykl on 2020/8/24.
@@ -30,7 +26,7 @@ import org.apache.commons.lang.StringUtils;
 public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
 
     @Override
-    protected void launchScript(AlibabaEcsComputer computer, TaskListener listener) {
+    protected void launchScript(AlibabaEcsComputer computer, TaskListener listener) throws AlibabaEcsException, IOException, InterruptedException {
         log.info("launchScript start...");
         AlibabaEcsSpotFollower node = computer.getNode();
         if (node == null) {
@@ -45,7 +41,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
             // 优先使用公网IP, 没有的话, 则降级到内网IP.
             hostIp = node.getPrivateIp();
             LogHelper.warn(log, listener,
-                "launchScript using privateIp " + hostIp + " publicIp is null. instanceId: " + node.getEcsInstanceId(), null);
+                    "launchScript using privateIp " + hostIp + " publicIp is null. instanceId: " + node.getEcsInstanceId(), null);
         }
         Connection conn = null;
         try {
@@ -88,8 +84,6 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                     launchString);
             CommandLauncher commandLauncher = new CommandLauncher(sshClientLaunchString, null);
             commandLauncher.launch(computer, listener);
-        } catch (IOException | InterruptedException | AlibabaEcsException e) {
-            LogHelper.warn(log, listener, "launchScript failed.", null);
         } finally {
             if (null != conn) {
                 conn.close();
@@ -137,11 +131,16 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
 
     private Connection connectToSsh(AlibabaEcsComputer computer, TaskListener listener)
             throws IOException {
-        final long timeout = 120 * 1000;
+        final AlibabaEcsSpotFollower node = computer.getNode();
+
+        final long timeout = node == null ? 0L : node.getLaunchTimeoutInMillis();
         final long startTime = System.currentTimeMillis();
         while (true) {
-            if (System.currentTimeMillis() - startTime > timeout) {
-                throw new IOException("connectToSsh failed. usedTime: " + (System.currentTimeMillis() - startTime));
+            long waitTime = System.currentTimeMillis() - startTime;
+            if (timeout > 0 && waitTime > timeout) {
+                throw new IOException("Timed out after " + (waitTime / 1000)
+                        + " seconds of waiting for ssh to become available. (maximum timeout configured is "
+                        + (timeout / 1000) + ")");
             }
             try {
                 LogHelper.info(log, listener, "try to connect to ssh.", null);
@@ -155,11 +154,14 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                 String hostIp = follower.getPublicIp();
                 if (StringUtils.isEmpty(hostIp)) {
                     LogHelper.warn(log, listener,
-                        "connectToSsh using privateIp " + privateIp + " publicIp is null. instanceId: " + follower.getEcsInstanceId(), null);
+                            "connectToSsh using privateIp " + privateIp + " publicIp is null. instanceId: " + follower.getEcsInstanceId(), null);
                     hostIp = privateIp;
                 }
                 Connection conn = new Connection(hostIp, 22);
                 conn.connect(new ServerHostKeyVerifierImpl(computer, listener), 10000, 10000);
+
+                LogHelper.info(log, listener, "connectToSsh success. cost: " + (System.currentTimeMillis() - startTime) + "ms", null);
+
                 boolean b = false;
                 AlibabaCloud alibabaCloud = computer.getCloud();
                 if (null != alibabaCloud) {
@@ -179,7 +181,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                     return conn;
                 }
             } catch (Exception e) {
-                LogHelper.error(log, listener, "connectToSsh error.", e);
+                LogHelper.error(log, listener, "connectToSsh error. cost: " + waitTime + "ms timeout threshold: " + timeout + "ms  Retrying...", e);
             }
             try {
                 Thread.sleep(5000L);

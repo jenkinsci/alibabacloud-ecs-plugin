@@ -1,59 +1,20 @@
 package com.alibabacloud.jenkins.ecs.client;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
 import com.alibaba.fastjson.JSON;
-
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.auth.AlibabaCloudCredentials;
-import com.aliyuncs.ecs.model.v20140526.AllocatePublicIpAddressRequest;
-import com.aliyuncs.ecs.model.v20140526.AllocatePublicIpAddressResponse;
-import com.aliyuncs.ecs.model.v20140526.AuthorizeSecurityGroupRequest;
-import com.aliyuncs.ecs.model.v20140526.CreateSecurityGroupRequest;
-import com.aliyuncs.ecs.model.v20140526.CreateSecurityGroupResponse;
-import com.aliyuncs.ecs.model.v20140526.CreateVSwitchRequest;
-import com.aliyuncs.ecs.model.v20140526.CreateVSwitchResponse;
-import com.aliyuncs.ecs.model.v20140526.CreateVpcRequest;
-import com.aliyuncs.ecs.model.v20140526.CreateVpcResponse;
-import com.aliyuncs.ecs.model.v20140526.DeleteInstanceRequest;
-import com.aliyuncs.ecs.model.v20140526.DeleteInstanceResponse;
-import com.aliyuncs.ecs.model.v20140526.DeleteVSwitchRequest;
-import com.aliyuncs.ecs.model.v20140526.DeleteVpcRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse;
+import com.aliyuncs.ecs.model.v20140526.*;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource.SupportedResource;
-import com.aliyuncs.ecs.model.v20140526.DescribeImagesRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse;
-import com.aliyuncs.ecs.model.v20140526.DescribeInstancesRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse.Instance;
-import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
-import com.aliyuncs.ecs.model.v20140526.DescribeRegionsRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse.Region;
-import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse.SecurityGroup;
-import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse.VSwitch;
-import com.aliyuncs.ecs.model.v20140526.DescribeVpcsRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeVpcsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVpcsResponse.Vpc;
-import com.aliyuncs.ecs.model.v20140526.DescribeZonesRequest;
-import com.aliyuncs.ecs.model.v20140526.DescribeZonesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeZonesResponse.Zone;
-import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
-import com.aliyuncs.ecs.model.v20140526.RunInstancesResponse;
-import com.aliyuncs.ecs.model.v20140526.StopInstanceRequest;
-import com.aliyuncs.ecs.model.v20140526.StopInstanceResponse;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.FormatType;
 import com.aliyuncs.profile.DefaultProfile;
@@ -63,6 +24,9 @@ import hudson.util.FormValidation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Created by kunlun.ykl on 2020/8/26.
@@ -80,13 +44,13 @@ public class AlibabaEcsClient {
         IClientProfile profile = DefaultProfile.getProfile(regionNo,
                 credentials.getAccessKeyId(),
                 credentials.getAccessKeySecret());
-        if(intranetMaster != null && intranetMaster) {
+        if (intranetMaster != null && intranetMaster) {
             // use vpc endpoint if jenkins master in vpc private env
             profile.enableUsingVpcEndpoint();
         }
         this.client = new DefaultAcsClient(profile);
         this.regionNo = regionNo;
-        this.intranetMaster = intranetMaster == null ? Boolean.FALSE: intranetMaster;
+        this.intranetMaster = intranetMaster == null ? Boolean.FALSE : intranetMaster;
         log.info("AlibabaEcsClient init success. regionNo: {} intranetMaster: {}", regionNo, intranetMaster);
     }
 
@@ -340,7 +304,7 @@ public class AlibabaEcsClient {
         return false;
     }
 
-    public List<String> describeInstanceTypes(String zone, int core, float memInGb) {
+    public List<String> describeInstanceTypes(String zone, Integer core, Float memInGb) {
         try {
             DescribeAvailableResourceRequest resourceRequest = new DescribeAvailableResourceRequest();
             resourceRequest.setDestinationResource("InstanceType");
@@ -349,7 +313,12 @@ public class AlibabaEcsClient {
             resourceRequest.setResourceType("instance");
             resourceRequest.setSpotStrategy("SpotAsPriceGo");
             resourceRequest.setInstanceChargeType("PostPaid");
-            resourceRequest.setCores(core);
+            if (null != core) {
+                resourceRequest.setCores(core);
+            }
+            if (null != memInGb) {
+                resourceRequest.setCores(core);
+            }
             resourceRequest.setMemory(memInGb);
             DescribeAvailableResourceResponse acsResponse = client.getAcsResponse(resourceRequest);
             if (CollectionUtils.isEmpty(acsResponse.getAvailableZones())) {
@@ -405,6 +374,7 @@ public class AlibabaEcsClient {
             request.setInstanceIds(JSON.toJSONString(instanceIds));
             DescribeInstancesResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getInstances())) {
+                log.error("describeInstances error. instanceIds: {} acsResponse: {}", JSON.toJSONString(instanceIds), JSON.toJSONString(acsResponse));
                 return Lists.newArrayList();
             }
             return acsResponse.getInstances();
@@ -421,22 +391,27 @@ public class AlibabaEcsClient {
             StopInstanceResponse acsResponse = client.getAcsResponse(request);
             log.info("stopInstance success. instanceId: {} response: {}", instanceId, JSON.toJSONString(acsResponse));
         } catch (Exception e) {
-            log.error("stopIntance error. instanceId: {}", instanceId, e);
+            log.error("stopInstance error. instanceId: {}", instanceId, e);
         }
     }
 
     /**
      * @param instanceId
      */
-    public void terminateInstance(String instanceId, boolean force) {
+    public boolean terminateInstance(String instanceId, boolean force) {
         try {
+            log.info("terminateInstance start. instanceId: {} force: {}", instanceId, force);
             DeleteInstanceRequest request = new DeleteInstanceRequest();
             request.setInstanceId(instanceId);
             request.setForce(force);
             DeleteInstanceResponse acsResponse = client.getAcsResponse(request);
-            log.info("terminateIntance success. instanceId: {} resp: {}", instanceId, JSON.toJSONString(acsResponse));
+            log.info("terminateInstance success. instanceId: {} resp: {}", instanceId, JSON.toJSONString(acsResponse));
+            // true: 代表请求已经成功提交, 阿里云开始执行释放实例
+            return true;
         } catch (Exception e) {
-            log.error("terminateIntance error. instanceId: {}", instanceId, e);
+            log.error("terminateInstance error. instanceId: {}", instanceId, e);
+            // false: 代表当前状态有误, 不支持释放, 请求提交失败, 阿里云未开始执行释放实例
+            return false;
         }
     }
 

@@ -11,11 +11,14 @@
                 <f:entry title="Instance Id" field="ecsInstanceId">
                     <f:readOnlyTextbox value="${it.instanceId}"/>
                 </f:entry>
-                <f:entry title="${%Template Id}" field="templateId">
-                    <f:readOnlyTextbox value="${it.templateId}"/>
+                <f:entry title="Instance Type" field="instanceType">
+                    <f:readOnlyTextbox value="${instance.instanceType}"/>
+                </f:entry>
+                <f:entry title="${%Template Id}" field="templateName">
+                    <f:readOnlyTextbox value="${instance.templateName}"/>
                 </f:entry>
                 <f:entry title="${%Name}" field="name">
-                    <f:textbox value="${it.name}"/><!-- anomaly. instance[field] isn't what we want. -->
+                    <f:readOnlyTextbox value="${it.name}"/><!-- anomaly. instance[field] isn't what we want. -->
                 </f:entry>
                 <f:entry title="Cloud Name" field="cloudName">
                     <f:readOnlyTextbox value="${instance.cloudName}"/>
@@ -29,8 +32,14 @@
                 <f:entry title="# of executors" field="numExecutors">
                     <f:textbox/>
                 </f:entry>
+                <f:entry title="${%Uptime In Seconds}">
+                    <f:readOnlyTextbox value="${it.uptimeInSeconds}"/>
+                </f:entry>
                 <f:entry title="remoteFS" field="remoteFS">
                     <f:textbox value="${instance.remoteFS}"/>
+                </f:entry>
+                <f:entry title="${%User Data}" field="userData">
+                    <f:textarea/>
                 </f:entry>
                 <f:entry title="${%Init Script}" field="initScript">
                     <f:textarea/>
@@ -40,6 +49,14 @@
                 </f:entry>
                 <f:entry title="Labels" field="labelString">
                     <f:textbox/>
+                </f:entry>
+                <f:entry title="${%Idle Termination Time In Minutes}" field="idleTerminationMinutes">
+                    <f:textbox />
+                </f:entry>
+                <f:entry title="${%Tags}" description="${%ECS Tag/Value Pairs}">
+                    <f:repeatable field="tags">
+                        <st:include page="config.jelly" class="${descriptor.clazz}" />
+                    </f:repeatable>
                 </f:entry>
 
                 <!-- main body of the configuration -->

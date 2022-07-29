@@ -25,19 +25,19 @@ THE SOFTWARE.
 
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:ec="/lib/ecs">
-   <ec:blockWrapper>
-      <f:entry title="${%Name}" field="name">
-         <f:textbox />
-      </f:entry>
+    <ec:blockWrapper>
+        <f:entry title="${%Name}" field="name">
+            <f:textbox/>
+        </f:entry>
 
-      <f:entry title="${%Value}" field="value">
-         <f:textbox />
-      </f:entry>
+        <f:entry title="${%Value}" field="value">
+            <f:textbox/>
+        </f:entry>
 
-      <f:entry title="">
-         <div align="right">
-            <f:repeatableDeleteButton />
-         </div>
-      </f:entry>
-   </ec:blockWrapper>
+        <f:entry title="">
+            <div align="right">
+                <f:repeatableDeleteButton/>
+            </div>
+        </f:entry>
+    </ec:blockWrapper>
 </j:jelly>

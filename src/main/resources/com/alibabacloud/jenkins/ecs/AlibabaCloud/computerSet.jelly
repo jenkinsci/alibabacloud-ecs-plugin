@@ -5,10 +5,10 @@
         <td/>
         <td colspan="${monitors.size()+1}">
             <f:form action="${rootURL}/cloud/${it.name}/provision" method="post" name="provision">
-                <input type="submit" class="ecs-provision-button" value="${%Provision via} ${it.displayName}"/>
-                <select name="template">
+                <input type="submit" class="ecs-provision-button" value="${%Provision via} ${it.cloudName}"/>
+                <select name="templateName">
                     <j:forEach var="t" items="${it.templates}">
-                        <option value="${t.templateId}">${t.templateId}</option>
+                        <option value="${t.templateName}">${t.templateName}</option>
                     </j:forEach>
                 </select>
                 <st:once>

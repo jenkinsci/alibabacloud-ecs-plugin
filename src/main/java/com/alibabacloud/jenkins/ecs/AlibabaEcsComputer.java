@@ -17,6 +17,19 @@ public class AlibabaEcsComputer extends SlaveComputer {
         super(follower);
     }
 
+    public AlibabaEcsFollowerTemplate getSlaveTemplate() {
+        AlibabaEcsSpotFollower node = getNode();
+        if (node == null) {
+            log.error("getSlaveTemplate error. node is null. computerName: {}", this.getName());
+            return null;
+        }
+        if (null == node.getCloud()) {
+            log.error("getCloud error. cloud null. computerName: {} cloudName: {}", this.getName(), node.getCloudName());
+            return null;
+        }
+        return node.getCloud().getTemplate(node.getTemplateName());
+    }
+
     public String getEcsType() {
         AlibabaEcsSpotFollower node = getNode();
         return node == null ? null : node.getInstanceType();
@@ -33,9 +46,28 @@ public class AlibabaEcsComputer extends SlaveComputer {
         return node == null ? null : node.getCloud();
     }
 
+    public String status() {
+        AlibabaEcsSpotFollower node = getNode();
+        return node == null ? null : node.status();
+    }
+
+    public boolean isAlive() {
+        AlibabaEcsSpotFollower node = getNode();
+        return node == null ? false : node.isAlive();
+    }
+
+    public long getUptime() {
+        AlibabaEcsSpotFollower node = getNode();
+        return node == null ? 0 : node.getUptime();
+    }
+
+    public long getUptimeInSeconds() {
+        return getUptime() / 1000;
+    }
+
     @Override
     public AlibabaEcsSpotFollower getNode() {
-        return (AlibabaEcsSpotFollower)super.getNode();
+        return (AlibabaEcsSpotFollower) super.getNode();
     }
 
     @Override
@@ -51,10 +83,10 @@ public class AlibabaEcsComputer extends SlaveComputer {
     }
 
     public void onConnected() {
+        log.info("AlibabaEcsComputer onConnected. {}", getInstanceId());
         AlibabaEcsSpotFollower node = getNode();
         if (node != null) {
-            Boolean result =  node.onConnected();
-            log.info("node.onConnected() result is:",result);
+            node.onConnected();
         }
     }
 

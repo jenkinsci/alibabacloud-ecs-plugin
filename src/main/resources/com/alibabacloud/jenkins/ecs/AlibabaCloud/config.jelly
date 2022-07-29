@@ -3,16 +3,16 @@
          xmlns:f="/lib/form"
          xmlns:st="jelly:stapler"
          xmlns:c="/lib/credentials">
-    <f:entry title="${%Name}" field="name">
-        <f:textbox default="Ecs Spot"/>
+    <f:entry title="${%Name}" field="cloudName">
+        <f:textbox default="Alibaba Cloud ECS"/>
     </f:entry>
 
     <f:entry title="${%Jenkins Master In Private Network?}" field="intranetMaster">
         <f:checkbox default="false"/>
     </f:entry>
 
-    <f:entry field="credentialsId" title="${%Alibaba Cloud Credentials}"
-             description="Alibaba Cloud IAM Access Key used to connect to ECS. If not specified, implicit authentication mechanisms are used (IAM roles...)">
+    <f:entry field="credentialsId" title="${%Alibaba_Cloud_Credentials}"
+             description="${%CredentialsDescription}">
         <c:select default="${it.credentialsId}" includeUser="false"/>
     </f:entry>
 
@@ -20,70 +20,36 @@
         <f:select />
     </f:entry>
 
-    <f:entry title="${%Image}" field="image">
-        <f:textbox/>
-    </f:entry>
-
     <f:entry title="${%VPC}" field="vpc">
-        <f:select default="${it.vpc}"/>
+        <f:select />
     </f:entry>
 
-    <f:entry title="${%Security Group}" field="securityGroup">
-        <f:select default="${it.securityGroup}"/>
+    <f:entry title="${%Security_Group}" field="securityGroup">
+        <f:select />
     </f:entry>
-
-    <f:entry field="sshKey" title="${%ECS SSH Key}">
+    <f:entry field="sshKey" title="${%ECS_SSH_Key}">
         <c:select includeUser="false" default="${it.sshKey}"/>
     </f:entry>
 
-    <f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection"
+    <f:advanced title="${%Advanced}">
+        <f:entry title="${%Assign_Public_Ip}" field="attachPublicIp">
+            <f:checkbox default="true"/>
+        </f:entry>
+        <f:entry title="${%Instance_Cap}" field="instanceCapStr">
+            <f:textbox default="${descriptor.defaultInstanceCapForCloud}"/>
+        </f:entry>
+        <f:entry title="${%No_delay_provisioning}" field="noDelayProvisioning">
+            <f:checkbox default="${descriptor.defaultNoDelayProvisioning}"/>
+        </f:entry>
+    </f:advanced>
+
+    <f:validateButton title="${%Test_Connection}" progress="${%Testing...}" method="testConnection"
                       with="credentialsId,sshKey,region,intranetMaster"/>
 
-    <f:entry title="${%Availability Zone}" field="zone">
-        <f:select default="${it.zone}"/>
-    </f:entry>
-    <f:entry title="${%Instance Charge Type}" field="chargeType">
-        <f:select />
-    </f:entry>
-    <f:entry title="${%VSW}" field="vsw">
-        <f:select default="${it.vswId}"/>
-    </f:entry>
-
-    <f:entry field="instanceType" title="Choose Instance Type">
-        <f:textbox/>
-    </f:entry>
-
-    <f:entry title="${%Minimum number of instances}" field="minimumNumberOfInstances">
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="${%UserData}" field="userData">
-        <f:textarea/>
-    </f:entry>
-    <f:entry title="${%Init Script}" field="initScript">
-        <f:textarea/>
-    </f:entry>
-    <f:entry title="${%Labels}" field="labelString">
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="${%Remote FS root}" field="remoteFs">
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="${%System Disk Category}" field="systemDiskCategory">
-        <f:select />
-    </f:entry>
-    <f:entry title="${%System Disk Size}" field="systemDiskSize">
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="${%Assign Public Ip}" field="attachPublicIp">
-        <f:checkbox default="true"/>
-    </f:entry>
-
-    <f:entry title="${%Tags}" description="${%ECS Tag/Value Pairs}">
-        <f:repeatable field="tags">
-            <st:include page="config.jelly" class="${descriptor.clazz}"/>
+    <f:entry title="${%Images}" description="${%ImagesDescription}">
+        <f:repeatable field="templates">
+            <st:include page="config.jelly" class="${descriptor.clazz}" />
         </f:repeatable>
     </f:entry>
-    <f:validateButton title="${%dryRunInstance}" progress="${%Runing...}" method="dryRunInstance"
-                         with="credentialsId,intranetMaster,region,image,vpc,securityGroup,zone,vsw,instanceType,minimumNumberOfInstances,initScript,labelString,remoteFs,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData"/>
 
 </j:jelly>

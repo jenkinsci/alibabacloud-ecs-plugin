@@ -1,0 +1,12 @@
+<div>
+    The maximum number of concurrent builds that Jenkins may perform on this node.default: 4<br>
+    A good value to start with would be the number of CPU cores on the machine(see the "Instance Types and
+    Specifications" chapter of <a href="https://help.aliyun.com/document_detail/108399.html">"Elastic Cloud Server Product
+    Introduction"</a> get the cpu number).<br>
+    Setting a higher value would cause each build to take longer, but could increase the overall throughput. For
+    example, one build might be CPU-bound, while a second build running at the same time might be I/O-bound — so the
+    second build could take advantage of the spare I/O capacity at that moment.
+    <p></p>
+    For the master, set the number of executors to zero to prevent it from executing builds locally. Note: master will
+    always be able to run flyweight tasks including Pipeline's top-level task.
+</div>
