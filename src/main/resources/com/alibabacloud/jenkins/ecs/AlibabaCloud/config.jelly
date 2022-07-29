@@ -53,6 +53,10 @@
         <f:textbox/>
     </f:entry>
 
+    <f:entry title="${%Number of Executors}" field="numExecutors">
+        <f:textbox />
+    </f:entry>
+
     <f:entry title="${%Minimum number of instances}" field="minimumNumberOfInstances">
         <f:textbox/>
     </f:entry>
