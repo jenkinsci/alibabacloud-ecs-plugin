@@ -48,7 +48,7 @@ public class AlibabaEcsSpotFollower extends Slave {
     public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher,
                                   String remoteFS,
                                   @Nonnull String cloudName, String labelString, String initScript,
-                                  @Nonnull String templateId, String userData)
+                                  @Nonnull String templateId, String userData, int numExecutors)
         throws IOException, FormException {
         super(name, remoteFS, launcher);
         this.ecsInstanceId = ecsInstanceId;
@@ -57,6 +57,7 @@ public class AlibabaEcsSpotFollower extends Slave {
         this.templateId = templateId;
         this.userData = StringUtils.trimToEmpty(userData);
         setLabelString(labelString);
+        setNumExecutors(numExecutors);
         DescribeInstancesResponse.Instance instance = describeNode();
         if (null == instance) {
             log.error("describeNode error. instance is null. ecsInstanceId: " + ecsInstanceId);
@@ -81,11 +82,11 @@ public class AlibabaEcsSpotFollower extends Slave {
     @DataBoundConstructor
     public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, String remoteFS,
                                   @Nonnull String cloudName, String labelString, String initScript,
-                                  @Nonnull String templateId, String userData)
+                                  @Nonnull String templateId, String userData, int numExecutors)
         throws FormException, IOException {
         // TODO: create Launcher by ami type
         this(ecsInstanceId, name, new AlibabaEcsUnixComputerLauncher(), remoteFS, cloudName, labelString, initScript,
-            templateId, userData);
+            templateId, userData, numExecutors);
     }
 
     @Override

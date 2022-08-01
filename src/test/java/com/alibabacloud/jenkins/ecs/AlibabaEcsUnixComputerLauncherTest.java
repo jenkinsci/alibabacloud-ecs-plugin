@@ -26,7 +26,7 @@ public class AlibabaEcsUnixComputerLauncherTest {
         AlibabaEcsUnixComputerLauncher launcher = new AlibabaEcsUnixComputerLauncher();
         AlibabaEcsSpotFollower follower = new AlibabaEcsSpotFollower("follower", "follower", launcher, "remoteFS", "ECS Spot", "",
             "echo hello",
-            "sample", "efsefsf");
+            "sample", "efsefsf", 1);
         r.jenkins.addNode(follower);
 
         SlaveComputer slaveComputer = new SlaveComputer(follower);

@@ -135,6 +135,7 @@ public class AlibabaCloud extends Cloud {
      */
     private String chargeType;
 
+    private String numExecutors;
 
     private List<AlibabaEcsFollowerTemplate> templates;
 
@@ -142,7 +143,7 @@ public class AlibabaCloud extends Cloud {
 
     public static final String CLOUD_ID = "Alibaba Cloud ECS";
 
-    public static final String SPOT_INSTANCE_CHARGE_TYPE= "Spot";
+    public static final String SPOT_INSTANCE_CHARGE_TYPE = "Spot";
 
     public static final String ON_DEMAND_INSTANCE_CHARGE_TYPE = "OnDemand";
 
@@ -150,8 +151,8 @@ public class AlibabaCloud extends Cloud {
     public AlibabaCloud(String name, String credentialsId, String sshKey, String region,
                         String image, String vpc, String securityGroup, String zone, String vsw, String instanceType,
                         int minimumNumberOfInstances, String initScript, String labelString, String remoteFs,
-                        String systemDiskCategory, Integer systemDiskSize,
-                        Boolean attachPublicIp, Boolean intranetMaster, List<AlibabaEcsTag>tags, String chargeType, String userData) {
+                        String systemDiskCategory, Integer systemDiskSize, Boolean attachPublicIp, Boolean intranetMaster,
+                        List<AlibabaEcsTag>tags, String chargeType, String userData, String numExecutors) {
         super(StringUtils.isBlank(name) ? CLOUD_ID : name);
         this.credentialsId = credentialsId;
         this.sshKey = sshKey;
@@ -159,7 +160,7 @@ public class AlibabaCloud extends Cloud {
         this.image = image;
         this.intranetMaster = intranetMaster;
         this.chargeType = chargeType;
-
+        this.numExecutors = numExecutors;
         if (StringUtils.isNotBlank(remoteFs)) {
             this.remoteFs = remoteFs;
         } else {
@@ -200,8 +201,8 @@ public class AlibabaCloud extends Cloud {
         }
 
         AlibabaEcsFollowerTemplate template = new AlibabaEcsFollowerTemplate(region, zone, instanceType,
-            minimumNumberOfInstances, vsw,
-            initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize, attachPublicIp, tags, chargeType, userData);
+            minimumNumberOfInstances, vsw, initScript, labelString, remoteFs, systemDiskCategory, systemDiskSize,
+             attachPublicIp, tags, chargeType, userData, numExecutors);
         templates = Lists.newArrayList(template);
         readResolve();
     }
@@ -401,6 +402,14 @@ public class AlibabaCloud extends Cloud {
 
     public AlibabaPrivateKey getPrivateKey() {
         return privateKey;
+    }
+
+    public String getChargeType() {
+        return chargeType;
+    }
+
+    public String getNumExecutors() {
+        return numExecutors;
     }
 
     @Override

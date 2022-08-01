@@ -11,6 +11,7 @@ import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
 import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest.Tag;
 import com.google.common.collect.Lists;
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
@@ -64,11 +65,16 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
      */
     private String chargeType;
 
+    /**
+     * 执行着数量
+     */
+    private String numExecutors;
+
     private int minimumNumberOfInstances;
 
     private transient AlibabaCloud parent;
 
-    public static final String SPOT_INSTANCE_CHARGE_TYPE= "Spot";
+    public static final String SPOT_INSTANCE_CHARGE_TYPE = "Spot";
 
 
 
@@ -88,8 +94,8 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
     public AlibabaEcsFollowerTemplate(String region, String zone, String instanceType, int minimumNumberOfInstances,
                                       String vsw, String initScript, String labelString, String remoteFs,
-                                      String systemDiskCategory, Integer systemDiskSize,
-                                      Boolean attachPublicIp, List<AlibabaEcsTag> tags, String chargeType, String userData) {
+                                      String systemDiskCategory, Integer systemDiskSize, Boolean attachPublicIp,
+                                      List<AlibabaEcsTag> tags, String chargeType, String userData, String numExecutors) {
         this.region = region;
         this.zone = zone;
         this.instanceType = instanceType;
@@ -103,6 +109,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.systemDiskCategory = systemDiskCategory;
         this.systemDiskSize = systemDiskSize;
         this.chargeType = chargeType;
+        this.numExecutors = Util.fixNull(numExecutors).trim();
         if (attachPublicIp != null) {
             this.attachPublicIp = attachPublicIp;
         }
@@ -168,6 +175,13 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return remoteFs;
     }
 
+    public int getNumExecutors() {
+        try {
+            return Integer.parseInt(numExecutors);
+        } catch (NumberFormatException e) {
+            return 2;
+        }
+    }
 
     public List<AlibabaEcsSpotFollower> provision(int amount) throws Exception {
         List<AlibabaEcsSpotFollower> list = Lists.newArrayList();
@@ -176,7 +190,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId,
                 templateId + "-" + instanceId,
                 remoteFs,
-                parent.getDisplayName(), labelString, initScript, getTemplateId(), userData);
+                parent.getDisplayName(), labelString, initScript, getTemplateId(), userData, getNumExecutors());
             list.add(alibabaEcsSpotFollower);
         }
         return list;
