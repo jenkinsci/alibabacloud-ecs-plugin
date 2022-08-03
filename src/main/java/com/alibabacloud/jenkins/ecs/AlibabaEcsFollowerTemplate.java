@@ -18,7 +18,6 @@ import hudson.RelativePath;
 import hudson.Util;
 import hudson.XmlFile;
 import hudson.model.*;
-import hudson.model.Messages;
 import hudson.model.labels.LabelAtom;
 import hudson.model.listeners.SaveableListener;
 import hudson.security.Permission;

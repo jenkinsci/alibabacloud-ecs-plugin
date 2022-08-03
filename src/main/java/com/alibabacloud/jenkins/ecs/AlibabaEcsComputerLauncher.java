@@ -1,6 +1,7 @@
 package com.alibabacloud.jenkins.ecs;
 
 import com.alibabacloud.jenkins.ecs.exception.AlibabaEcsException;
+import hudson.model.Slave;
 import hudson.model.TaskListener;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.SlaveComputer;
@@ -21,16 +22,18 @@ public abstract class AlibabaEcsComputerLauncher extends ComputerLauncher {
             launchScript((AlibabaEcsComputer) slaveComputer, listener);
         } catch (AlibabaEcsException | IOException e) {
             e.printStackTrace(listener.error(e.getMessage()));
-            if (slaveComputer.getNode() != null && slaveComputer.getNode() instanceof AlibabaEcsSpotFollower) {
+            Slave node = slaveComputer.getNode();
+            if (node != null && node instanceof AlibabaEcsSpotFollower) {
                 LOGGER.log(Level.WARNING, String.format("Terminating the ecs agent %s due a problem launching or connecting to it", slaveComputer.getName()), e);
-                ((AlibabaEcsSpotFollower) slaveComputer.getNode()).terminate();
+                ((AlibabaEcsSpotFollower) node).terminate();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             e.printStackTrace(listener.error(e.getMessage()));
-            if (slaveComputer.getNode() != null && slaveComputer.getNode() instanceof AlibabaEcsSpotFollower) {
+            Slave node = slaveComputer.getNode();
+            if (node != null && node instanceof AlibabaEcsSpotFollower) {
                 LOGGER.log(Level.WARNING, String.format("Terminating the ecs agent %s due a problem launching or connecting to it", slaveComputer.getName()), e);
-                ((AlibabaEcsSpotFollower) slaveComputer.getNode()).terminate();
+                ((AlibabaEcsSpotFollower) node).terminate();
             }
         }
     }

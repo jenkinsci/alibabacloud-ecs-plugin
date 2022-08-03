@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class AlibabaEcsSpotFollower extends Slave {
+
+    private static final long serialVersionUID = 8200764298813399318L;
     protected static final long MIN_FETCH_TIME = Long.getLong("hudson.plugins.ecs.AlibabaEcsSpotFollower.MIN_FETCH_TIME", TimeUnit.SECONDS.toMillis(300));
 
     /**
@@ -64,7 +66,7 @@ public class AlibabaEcsSpotFollower extends Slave {
      */
     private final int launchTimeout;
 
-    public List<AlibabaEcsTag> tags = Lists.newArrayList();
+    public transient List<AlibabaEcsTag> tags = Lists.newArrayList();
     private boolean isConnected = false;
 
     public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, RetentionStrategy<AlibabaEcsComputer> retentionStrategy, String userData) throws IOException, FormException {
