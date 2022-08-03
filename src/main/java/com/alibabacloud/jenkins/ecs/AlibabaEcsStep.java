@@ -26,7 +26,7 @@ import static com.alibabacloud.jenkins.ecs.AlibabaCloud.CLOUD_ID_PREFIX;
  *
  * <pre>
  * node {
- *     def x = alibabaEcs cloud: 'myCloud', template: 'cn-beijing-a-ecs.c5.large'
+ *     def x = alibabaEcs cloud: 'ALI-myCloud', template: 'cn-beijing-a-ecs.c5.large'
  * }
  * </pre>
  * <p>

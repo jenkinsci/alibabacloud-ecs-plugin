@@ -17,8 +17,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -45,13 +44,14 @@ public class AlibabaEcsStepTest {
         List<AlibabaEcsFollowerTemplate> templates = Lists.newArrayList();
         templates.add(template);
         when(cl.getDisplayName()).thenReturn("Alibaba Cloud ECS");
+        when(cl.getCloudName()).thenReturn("Alibaba Cloud ECS");
         when(cl.getTemplates()).thenReturn(templates);
         when(cl.getTemplate(anyString())).thenReturn(template);
         r.jenkins.clouds.add(cl);
 
         when(follower.getNodeName()).thenReturn("nodeName");
         List<AlibabaEcsSpotFollower> slaves = Collections.singletonList(follower);
-        when(template.provision(anyInt(), true)).thenReturn(slaves);
+        when(template.provision(anyInt(), anyBoolean())).thenReturn(slaves);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class AlibabaEcsStepTest {
         WorkflowJob boot = r.jenkins.createProject(WorkflowJob.class, "AlibabaCloudEcsTest");
         boot.setDefinition(new CpsFlowDefinition(
                 " node('master') {\n" +
-                        "    def X = alibabaEcs cloud: 'Alibaba Cloud ECS', template: 'cn-beijing-h-ecs.g5.large'\n" +
+                        "    def X = alibabaEcs cloud: 'ALI-Alibaba Cloud ECS', template: 'cn-beijing-h-ecs.g5.large'\n" +
                         "}", true));
         WorkflowRun b = r.assertBuildStatusSuccess(boot.scheduleBuild2(0));
         r.assertLogContains("SUCCESS", b);
