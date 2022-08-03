@@ -195,7 +195,7 @@ public class AlibabaEcsRetentionStrategy extends RetentionStrategy<AlibabaEcsCom
             if (idleMilliseconds > TimeUnit.MINUTES.toMillis(idleTerminationMinutes)) {
                 LOGGER.info("Idle timeout of " + computer.getName() + " after "
                         + TimeUnit.MILLISECONDS.toMinutes(idleMilliseconds) +
-                        " idle minutes, instance status" + state);
+                        " idle minutes, instance status: " + state);
                 AlibabaEcsSpotFollower slaveNode = computer.getNode();
                 if (slaveNode != null) {
                     slaveNode.idleTimeout();

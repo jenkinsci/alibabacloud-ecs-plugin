@@ -45,7 +45,6 @@ public class AlibabaEcsFollowerMonitor extends AsyncPeriodicWork {
                 try {
                     if (!ecsSlave.isAlive()
                             && !computer.isConnecting()
-                            && !computer.isAcceptingTasks()
                             && computer.isOffline()) {
                         LOGGER.info("ECS instance is dead: " + ecsSlave.getEcsInstanceId());
                         ecsSlave.terminate();
