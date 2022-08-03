@@ -4,6 +4,7 @@ import com.alibabacloud.jenkins.ecs.AlibabaEcsSpotFollower;
 import com.alibabacloud.jenkins.ecs.util.MinimumInstanceChecker;
 import hudson.Extension;
 import hudson.model.AsyncPeriodicWork;
+import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
@@ -40,8 +41,12 @@ public class AlibabaEcsFollowerMonitor extends AsyncPeriodicWork {
         for (Node node : Jenkins.get().getNodes()) {
             if (node instanceof AlibabaEcsSpotFollower) {
                 final AlibabaEcsSpotFollower ecsSlave = (AlibabaEcsSpotFollower) node;
+                Computer computer = ecsSlave.toComputer();
                 try {
-                    if (!ecsSlave.isAlive()) {
+                    if (!ecsSlave.isAlive()
+                            && !computer.isConnecting()
+                            && !computer.isAcceptingTasks()
+                            && computer.isOffline()) {
                         LOGGER.info("ECS instance is dead: " + ecsSlave.getEcsInstanceId());
                         ecsSlave.terminate();
                     }
@@ -52,6 +57,7 @@ public class AlibabaEcsFollowerMonitor extends AsyncPeriodicWork {
             }
         }
     }
+
     private void removeNode(AlibabaEcsSpotFollower ecsFollower) {
         try {
             Jenkins.get().removeNode(ecsFollower);
