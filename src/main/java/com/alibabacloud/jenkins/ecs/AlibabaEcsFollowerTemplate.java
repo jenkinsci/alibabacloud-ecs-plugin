@@ -17,10 +17,8 @@ import hudson.Extension;
 import hudson.RelativePath;
 import hudson.Util;
 import hudson.XmlFile;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.Label;
-import hudson.model.Saveable;
+import hudson.model.*;
+import hudson.model.Messages;
 import hudson.model.labels.LabelAtom;
 import hudson.model.listeners.SaveableListener;
 import hudson.security.Permission;
@@ -371,6 +369,18 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         @Override
         public String getDisplayName() {
             return "";
+        }
+        public FormValidation doCheckTemplateName(@QueryParameter String templateName) {
+            Jenkins.get().hasPermission(Jenkins.ADMINISTER);
+            if (StringUtils.isBlank(templateName)) {
+                return FormValidation.error("Description not specified");
+            }
+            try {
+                Jenkins.checkGoodName(templateName);
+            } catch (Failure e) {
+                return FormValidation.error(e.getMessage());
+            }
+            return FormValidation.ok();
         }
 
         public FormValidation doCheckMinimumNumberOfInstances(@QueryParameter String value, @QueryParameter String instanceCapStr) {
