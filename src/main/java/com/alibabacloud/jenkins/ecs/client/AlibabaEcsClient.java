@@ -1,6 +1,7 @@
 package com.alibabacloud.jenkins.ecs.client;
 
 import com.alibaba.fastjson.JSON;
+import com.alibabacloud.jenkins.ecs.Messages;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.auth.AlibabaCloudCredentials;
@@ -445,14 +446,14 @@ public class AlibabaEcsClient {
 
             RunInstancesResponse acsResponse = client.getAcsResponse(request);
             log.info("druRunInstances success. acsResponse: {}", JSON.toJSONString(acsResponse));
-            return FormValidation.ok("success.");
+            return FormValidation.ok(Messages.AlibabaECSCloud_Success());
         } catch (ClientException e) {
             if ("DryRunOperation".equals(e.getErrCode())) {
                 log.info("druRunInstances success. acsResponse: {}", JSON.toJSONString(request));
-                return FormValidation.ok("success.");
+                return FormValidation.ok(Messages.AlibabaECSCloud_Success());
             }
             log.error("druRunInstances error:{}. request: {}", e, JSON.toJSONString(request));
-            return FormValidation.error("error：" + e);
+            return FormValidation.error(Messages.AlibabaECSCloud_Error() + e);
         }
     }
 

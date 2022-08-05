@@ -372,7 +372,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         public FormValidation doCheckTemplateName(@QueryParameter String templateName) {
             Jenkins.get().hasPermission(Jenkins.ADMINISTER);
             if (StringUtils.isBlank(templateName)) {
-                return FormValidation.error("Description not specified");
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedDescription());
             }
             try {
                 Jenkins.checkGoodName(templateName);
@@ -394,14 +394,14 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
                         instanceCap = Integer.MAX_VALUE;
                     }
                     if (val > instanceCap) {
-                        return FormValidation.error("Minimum number of instances must not be larger than AMI Instance Cap %d", instanceCap);
+                        return FormValidation.error(Messages.AlibabaECSCloud_MinimumNumberOfInstancesCheckError(), instanceCap);
                     }
                     return FormValidation.ok();
                 }
             } catch (NumberFormatException e) {
                 log.info("doCheckMinimumNumberOfInstances error:" + JSON.toJSONString(e));
             }
-            return FormValidation.error("Minimum number of instances must be a non-negative integer (or null)");
+            return FormValidation.error(Messages.AlibabaECSCloud_MinimumNumberOfInstancesError());
         }
 
         @RequirePOST
@@ -521,12 +521,12 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         public FormValidation doDryRunInstance(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter Boolean intranetMaster, @RelativePath("..") @QueryParameter String region, @RelativePath("..") @QueryParameter String securityGroup, @RelativePath("..") @QueryParameter Boolean attachPublicIp, @QueryParameter String image, @QueryParameter String zone, @QueryParameter String vsw, @QueryParameter String instanceType, @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType) {
             log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}", credentialsId, intranetMaster, region);
             if (StringUtils.isBlank(credentialsId)) {
-                return FormValidation.error("credentialsId is null");
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
             }
             AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
             if (credentials == null) {
                 log.error("doDryRunInstance error. credentials not found. region: {} credentialsId: {}", region, credentialsId);
-                return FormValidation.error("Credentials not found");
+                return FormValidation.error(Messages.AlibabaECSCloud_NotFoundCredentials());
             }
             AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
             RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
