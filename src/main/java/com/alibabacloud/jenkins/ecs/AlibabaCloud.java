@@ -427,7 +427,7 @@ public class AlibabaCloud extends Cloud {
                 }
             }
             if (found > 1) {
-                return FormValidation.error("Duplicate Cloud Name");
+                return FormValidation.error(Messages.AlibabaECSCloud_NonUniqName());
             }
             return FormValidation.ok();
         }
@@ -448,11 +448,11 @@ public class AlibabaCloud extends Cloud {
         @RequirePOST
         public FormValidation doTestConnection(@QueryParameter String credentialsId, @QueryParameter String sshKey, @QueryParameter String region, @QueryParameter Boolean intranetMaster) {
             if (!Jenkins.get().hasPermission(CREATE) && Jenkins.get().hasPermission(UPDATE)) {
-                return FormValidation.error("permission is error");
+                return FormValidation.error(Messages.AlibabaECSCloud_PermissionError());
             }
 
             if (StringUtils.isBlank(credentialsId)) {
-                return FormValidation.error("Credentials not specified");
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
             }
             if (StringUtils.isBlank(region)) {
                 region = DEFAULT_ECS_REGION;
@@ -461,16 +461,16 @@ public class AlibabaCloud extends Cloud {
             AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
             if (credentials == null) {
                 log.error("doTestConnection error. credentials not found. region: {} credentialsId: {}", DEFAULT_ECS_REGION, credentialsId);
-                return FormValidation.error("Credentials not found");
+                return FormValidation.error(Messages.AlibabaECSCloud_NotFoundCredentials());
             }
             AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
             List<Region> regions = client.describeRegions();
             if (CollectionUtils.isEmpty(regions)) {
-                return FormValidation.error("Illegal ak/sk: " + credentialsId);
+                return FormValidation.error(Messages.AlibabaECSCloud_IllegalAkSk() + credentialsId);
             }
 
             if (StringUtils.isBlank(sshKey)) {
-                return FormValidation.error("SSH PrivateKey not specified");
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedSSHPrivateKey());
             }
 
             try {
@@ -478,13 +478,13 @@ public class AlibabaCloud extends Cloud {
                 BasicSSHUserPrivateKey sshCredential = getSshCredential(sshKey);
                 KeyPair keyPair = AlibabaKeyPairUtils.find(sshCredential.getPrivateKey(), credentials, region, intranetMaster);
                 if (null == keyPair) {
-                    return FormValidation.error("Illegal SSH PrivateKey: " + sshKey);
+                    return FormValidation.error(Messages.AlibabaECSCloud_IllegalSSHPrivateKey() + sshKey);
                 }
-                return FormValidation.ok("connection ok");
+                return FormValidation.ok(Messages.AlibabaECSCloud_ConnectionSuccess());
             } catch (Exception e) {
                 log.error("SSH PrivateKey validate error", e);
             }
-            return FormValidation.error("SSH PrivateKey validate error");
+            return FormValidation.error(Messages.AlibabaECSCloud_SSHPrivateKeyValidateError());
         }
 
         @RequirePOST
