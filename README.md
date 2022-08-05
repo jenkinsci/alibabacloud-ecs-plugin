@@ -229,6 +229,107 @@ Whether to set the public network ip
 
 ![](docs/images/jenkins.detailFollower.png)
 
+# Configure plugin via Groovy script
+
+Either automatically upon [Jenkins
+post-initialization](https://wiki.jenkins.io/display/JENKINS/Post-initialization+script) or
+through [Jenkins script
+console](https://wiki.jenkins.io/display/JENKINS/Jenkins+Script+Console),
+example:
+
+```groovy
+import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials
+import com.alibabacloud.jenkins.ecs.AlibabaCloud
+import com.alibabacloud.jenkins.ecs.AlibabaEcsFollowerTemplate
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.Domain
+import hudson.model.*
+import jenkins.model.Jenkins
+
+def AlibabaCredentialsParameters = [
+        id         : 'alibabacloud-jenkins-key',
+        description: 'Jenkins Key For Alibaba Cloud',
+        accessKey  : '${your-alibaba-cloud-ak}',
+        secretKey  : '${your-alibaba-cloud-sk}'
+]
+
+def AlibabaCloudFollowerTemplateParameters = [
+        region                  : '${your-region-no}', // cn-qingdao
+        zone                    : '${your-zone-no}', // cn-qingdao-c
+        instanceType            : '${your-instance-type}', // ecs.sn2ne.2xlarge
+        minimumNumberOfInstances: 1,
+        vsw                     : '${your-vsw-id}',
+        initScript              : "",
+        labelString             : 'Jenkins Agent',
+        remoteFs                : "/root"
+]
+
+def AlibabaCloudParameters = [
+        cloudName    : 'AlibabaCloudECS',
+        sshKeyId     : '${your-ssh-key-id}', // 请先在 Dashboard/Credentials 里配置好SSH Key, 这里放的是SSH Key的ID
+        image        : '${your-image-id}',
+        vpc          : '${your-vpc-id}',
+        securityGroup: '${your-sg-id}'
+]
+
+// https://github.com/jenkinsci/alibabacloud-credentials-plugin/blob/master/src/main/java/com/alibabacloud/credentials/plugin/auth/AlibabaCredentials.java
+AlibabaCredentials alibabaCredentials = new AlibabaCredentials(
+        CredentialsScope.GLOBAL,
+        AlibabaCredentialsParameters.id,
+        AlibabaCredentialsParameters.accessKey,
+        AlibabaCredentialsParameters.secretKey,
+        AlibabaCredentialsParameters.description
+)
+
+// get Jenkins instance
+Jenkins jenkins = Jenkins.getInstance()
+
+// get credentials domain
+def domain = Domain.global()
+
+// get credentials store
+def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+
+// add credential to store
+store.addCredentials(domain, alibabaCredentials)
+
+// https://github.com/jenkinsci/alibabacloud-ecs-plugin/blob/master/src/main/java/com/alibabacloud/jenkins/ecs/AlibabaEcsFollowerTemplate.java
+AlibabaEcsFollowerTemplate slaveTemplateQingdao = new AlibabaEcsFollowerTemplate(
+        AlibabaCloudFollowerTemplateParameters.region,
+        AlibabaCloudFollowerTemplateParameters.zone,
+        AlibabaCloudFollowerTemplateParameters.instanceType,
+        AlibabaCloudFollowerTemplateParameters.minimumNumberOfInstances,
+        AlibabaCloudFollowerTemplateParameters.vsw,
+        AlibabaCloudFollowerTemplateParameters.initScript,
+        AlibabaCloudFollowerTemplateParameters.labelString,
+        AlibabaCloudFollowerTemplateParameters.remoteFs,
+)
+
+// https://github.com/jenkinsci/alibabacloud-ecs-plugin/blob/master/src/main/java/com/alibabacloud/jenkins/ecs/AlibabaCloud.java
+AlibabaCloud alibabaCloud = new AlibabaCloud(
+        AlibabaCloudParameters.cloudName,
+        AlibabaCredentialsParameters.id,
+        AlibabaCloudParameters.sshKeyId,
+        AlibabaCloudFollowerTemplateParameters.region,
+        AlibabaCloudParameters.image,
+        AlibabaCloudParameters.vpc,
+        AlibabaCloudParameters.securityGroup,
+        AlibabaCloudFollowerTemplateParameters.zone,
+        AlibabaCloudFollowerTemplateParameters.vsw,
+        AlibabaCloudFollowerTemplateParameters.instanceType,
+        AlibabaCloudFollowerTemplateParameters.minimumNumberOfInstances,
+        AlibabaCloudFollowerTemplateParameters.initScript,
+        AlibabaCloudFollowerTemplateParameters.labelString,
+        AlibabaCloudFollowerTemplateParameters.remoteFs
+)
+
+// add cloud configuration to Jenkins
+jenkins.clouds.add(alibabaCloud)
+
+// save current Jenkins state to disk
+jenkins.save()
+```
+
 # Trouble Shooting <a id="troubleShooting"></a>
 * When you click the Save button, if the "SSH username with private key" connection test fails, the save 
 will succeed, but "provision node" will report an error of "a problem occurred while processing the request". 
