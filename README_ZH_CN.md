@@ -327,6 +327,8 @@ jenkins.clouds.add(alibabaCloud)
 // save current Jenkins state to disk
 jenkins.save()
 ```
+# 通过 pipeline 添加节点
+[AlibabaEcs Step pipeline](https://github.com/jenkinsci/alibabacloud-ecs-plugin/blob/master/PIPELINESTEP.md)
 
 # 故障排查 <a id="troubleShooting"></a>
 * 当您单击“保存”按钮时，如果“带有私钥的SSH用户名”连接测试失败，则保存将成功，但是“设置节点”将报告错误“处理请求时发生问题”。因此，保存前请确保连接成功。

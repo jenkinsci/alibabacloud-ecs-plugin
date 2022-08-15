@@ -348,8 +348,13 @@ public class AlibabaCloud extends Cloud {
 
     @RequirePOST
     public HttpResponse doProvision(@QueryParameter String templateName) throws Exception {
+        List<AlibabaEcsSpotFollower> nodes = createNodes(templateName);
+        return HttpResponses.redirectViaContextPath("/computer/" + nodes.get(0).getNodeName());
+    }
+
+    public List<AlibabaEcsSpotFollower> createNodes(String templateName) {
         checkPermission(PROVISION);
-        log.info("doProvision invoked template: {}", templateName);
+        log.info("createNodes invoked template: {}", templateName);
         AlibabaEcsFollowerTemplate alibabaEcsFollowerTemplate = getTemplate(templateName);
         if (alibabaEcsFollowerTemplate == null) {
             throw hudson.util.HttpResponses.error(SC_BAD_REQUEST, "No such template: " + templateName);
@@ -364,11 +369,12 @@ public class AlibabaCloud extends Cloud {
         try {
             // check how many spare followers should provision
             List<AlibabaEcsSpotFollower> nodes = getNewOrExistingAvailableSlave(alibabaEcsFollowerTemplate, 1);
-            if (nodes == null || nodes.isEmpty())
+            if (nodes == null || nodes.isEmpty()) {
                 throw hudson.util.HttpResponses.error(SC_BAD_REQUEST, "Cloud or Image instance cap would be exceeded for: " + templateName);
+            }
             // 将节点都加入jenkins里
             CloudHelper.attachSlavesToJenkins(nodes, alibabaEcsFollowerTemplate);
-            return HttpResponses.redirectViaContextPath("/computer/" + nodes.get(0).getNodeName());
+            return nodes;
         } catch (Exception e) {
             throw HttpResponses.error(SC_INTERNAL_SERVER_ERROR, e);
         }

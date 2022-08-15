@@ -9,6 +9,7 @@ import hudson.slaves.Cloud;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -41,6 +42,14 @@ public class AlibabaEcsStep extends Step {
     public AlibabaEcsStep(String cloud, String template) {
         this.cloud = cloud;
         this.template = template;
+    }
+
+    public String getCloud() {
+        return cloud;
+    }
+
+    public String getTemplate() {
+        return template;
     }
 
     @Override
@@ -107,24 +116,16 @@ public class AlibabaEcsStep extends Step {
 
         @Override
         protected Instance run() throws Exception {
-
             String cloudName = cloud.substring(CLOUD_ID_PREFIX.length());
-
             AlibabaCloud cl = CloudHelper.getCloud(cloudName);
             if (null == cl) {
                 throw new IllegalArgumentException(
-                        "Error in Alibaba Cloud. Please review Alibaba ECS settings in Jenkins configuration.");
+                    "Error in Alibaba Cloud. Please review Alibaba ECS settings in Jenkins configuration.");
             }
-
-            AlibabaEcsFollowerTemplate t = cl.getTemplate(template);
-            if (null == t) {
+            List<AlibabaEcsSpotFollower> instances = cl.createNodes(template);
+            if (CollectionUtils.isEmpty(instances)) {
                 throw new IllegalArgumentException(
-                        "Error in Alibaba Cloud. Please review Alibaba ECS template defined in Jenkins configuration.");
-            }
-            List<AlibabaEcsSpotFollower> instances = t.provision(1, cl.getAttachPublicIp());
-            if (instances == null) {
-                throw new IllegalArgumentException(
-                        "Error in Alibaba Cloud. Please review Alibaba ECS defined in Jenkins configuration.");
+                    "Error in Alibaba Cloud. Please review Alibaba ECS defined in Jenkins configuration.");
             }
             AlibabaEcsSpotFollower follower = instances.get(0);
             return CloudHelper.getInstanceWithRetry(follower);

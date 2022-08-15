@@ -330,6 +330,9 @@ jenkins.clouds.add(alibabaCloud)
 jenkins.save()
 ```
 
+# Add nodes via pipeline
+[AlibabaEcs Step pipeline](https://github.com/jenkinsci/alibabacloud-ecs-plugin/blob/master/PIPELINESTEP.md)
+
 # Trouble Shooting <a id="troubleShooting"></a>
 * When you click the Save button, if the "SSH username with private key" connection test fails, the save 
 will succeed, but "provision node" will report an error of "a problem occurred while processing the request". 
