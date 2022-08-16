@@ -50,8 +50,9 @@ public class AlibabaEcsStepTest {
         r.jenkins.clouds.add(cl);
 
         when(follower.getNodeName()).thenReturn("nodeName");
+        when(follower.getEcsInstanceId()).thenReturn("i-ddddd");
         List<AlibabaEcsSpotFollower> slaves = Collections.singletonList(follower);
-        when(template.provision(anyInt(), anyBoolean())).thenReturn(slaves);
+        when(cl.createNodes("cn-beijing-h-ecs.g5.large")).thenReturn(slaves);
     }
 
     @Test
