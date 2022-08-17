@@ -11,6 +11,7 @@ import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.slaves.CommandLauncher;
 import hudson.slaves.SlaveComputer;
+import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -53,10 +54,8 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
             conn.exec("mkdir -p " + tmpDir, remoteLogger);
 
             // 2. install jdk and scp
-            executeRemote(computer, conn, "java -fullversion", "sudo yum install -y java-1.8.0-openjdk.x86_64",
-                    remoteLogger,
-                    listener);
-            executeRemote(computer, conn, "which scp", "sudo yum install -y openssh-clients", remoteLogger, listener);
+            installJdk(node, computer, conn ,remoteLogger, listener);
+
             //executeRemote(computer, conn, "git --version", "sudo yum install -y git", remoteLogger, listener);
 
             // 3. run initScript
@@ -268,4 +267,63 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
         }
         return -1;
     }
+
+    private void installJdk(AlibabaEcsSpotFollower node, AlibabaEcsComputer computer, Connection conn,
+                   PrintStream remoteLogger, TaskListener listener) throws IOException, InterruptedException {
+        int i = -1;
+        VersionNumber version = Jenkins.getVersion();
+        if (null != version && null !=  node.lastFetchInstance){
+            VersionNumber versionNumber = new VersionNumber("2.303.1");
+            i = version.compareTo(versionNumber);
+            String osName = node.lastFetchInstance.getOSName();
+            String[] s = osName.split(" ");
+            String os = s[0];
+            if ("Ubuntu".equals(os)){
+                aptInstallJdk(i, remoteLogger, conn, computer, listener);
+            }else {
+                yumInstallJdk(i, remoteLogger, conn, computer, listener);
+            }
+        }else {
+            executeRemote(computer, conn, "java -fullversion", "sudo yum install -y java-1.8.0-openjdk.x86_64",
+                remoteLogger,
+                listener);
+            executeRemote(computer, conn, "which scp", "sudo yum install -y openssh-clients", remoteLogger,
+                listener);
+        }
+    }
+
+    private void aptInstallJdk( int i, PrintStream remoteLogger, Connection conn, AlibabaEcsComputer computer,
+                            TaskListener listener) throws IOException, InterruptedException {
+        if (0 <= i) {
+            conn.exec("sudo apt-get update", remoteLogger);
+            executeRemote(computer, conn, "java -fullversion", "sudo apt-get install -y openjdk-11-jdk",
+                remoteLogger,
+                listener);
+        } else {
+            conn.exec("sudo apt-get update", remoteLogger);
+            executeRemote(computer, conn, "java -fullversion", "sudo apt-get install -y openjdk-1.8-jdk",
+                remoteLogger,
+                listener);
+        }
+    }
+
+    private void yumInstallJdk(int i, PrintStream remoteLogger, Connection conn, AlibabaEcsComputer computer,
+    TaskListener listener) throws IOException, InterruptedException {
+        if (0 <= i) {
+            executeRemote(computer, conn, "java -fullversion", "sudo yum install -y java-11-openjdk.x86_64",
+                remoteLogger,
+                listener);
+            executeRemote(computer, conn, "which scp", "sudo yum install -y openssh-clients", remoteLogger,
+                listener);
+        }else {
+            executeRemote(computer, conn, "java -fullversion", "sudo yum install -y java-1.8.0-openjdk.x86_64",
+                remoteLogger,
+                listener);
+            executeRemote(computer, conn, "which scp", "sudo yum install -y openssh-clients", remoteLogger,
+                listener);
+        }
+    }
+
+
+
 }
