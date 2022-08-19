@@ -272,7 +272,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                    PrintStream remoteLogger, TaskListener listener) throws IOException, InterruptedException {
         int i = -1;
         VersionNumber version = Jenkins.getVersion();
-        if (null != version && null !=  node.lastFetchInstance){
+        if (null != version && null !=  node.lastFetchInstance && StringUtils.isNotBlank(node.lastFetchInstance.getOSName())){
             VersionNumber versionNumber = new VersionNumber("2.303.1");
             i = version.compareTo(versionNumber);
             String osName = node.lastFetchInstance.getOSName();
@@ -284,6 +284,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                 yumInstallJdk(i, remoteLogger, conn, computer, listener);
             }
         }else {
+            LogHelper.warn(log, listener, "jenkins version is null or ecs os is null" , null);
             executeRemote(computer, conn, "java -fullversion", "sudo yum install -y java-1.8.0-openjdk.x86_64",
                 remoteLogger,
                 listener);
