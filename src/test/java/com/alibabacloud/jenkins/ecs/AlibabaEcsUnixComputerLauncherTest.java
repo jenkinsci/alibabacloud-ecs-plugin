@@ -1,5 +1,6 @@
 package com.alibabacloud.jenkins.ecs;
 
+import com.alibabacloud.jenkins.ecs.win.ECSWindowsLauncher;
 import com.google.common.collect.Lists;
 import hudson.model.Descriptor.FormException;
 import hudson.model.TaskListener;
@@ -37,8 +38,8 @@ public class AlibabaEcsUnixComputerLauncherTest {
         int launchTimeout = 10000;
         List<AlibabaEcsTag> tags = Lists.newArrayList();
         String idleTerminationMinutes = "30";
-
-        AlibabaEcsSpotFollower follower = new AlibabaEcsSpotFollower(ecsInstanceId, name, remoteFS, cloudName, labelString, initScript, templateName, numExecutors, launchTimeout, tags, idleTerminationMinutes, userData);
+        UnixData unixData = new UnixData();
+        AlibabaEcsSpotFollower follower = new AlibabaEcsSpotFollower(ecsInstanceId, name, remoteFS, cloudName, labelString, initScript, templateName, numExecutors, launchTimeout, tags, idleTerminationMinutes, userData, unixData,  "");
         r.jenkins.addNode(follower);
 
         SlaveComputer slaveComputer = new SlaveComputer(follower);

@@ -1,0 +1,37 @@
+<div>
+	选择此代理使用的 ECS 类型：
+  <ul>
+    <li>Unix：通过 ssh 连接。</li>
+    <li>Windows：通过 CIFS 和 WinRM/WinRS 连接。</li>
+  </ul>
+  
+  <hr/>
+	Windows ECS注意事项：
+  <br/>
+	通过 CIFS（发送初始 Jenkins agent.jar）和 WinRM 访问阿里巴巴 Windows 代理以启动和连接
+	之后给代理。
+
+	此 windows ECS 必须配置：
+	<ul>
+	  <li>允许 SMB over TCP（传入 TCP 端口 445）和 WinRM（传入 TCP 端口 5985）的安全组</li>
+	  <li>Windows 防火墙应允许通过 TCP 传入 SMB</li>
+	  <li>java 应该已安装并在 %PATH% 中可用</li>
+	  <li>应使用以下命令启用 WinRM（有关详细信息，请参阅：<a href="http://support.microsoft.com/kb/555966">Microsoft article 555966</a>):
+	    <ul>
+	      <li>winrm quickconfig</li>
+	      <li>winrm set winrm/config/service/Auth '@{Basic="true"}'</li>
+	      <li>winrm set winrm/config/service '@{AllowUnencrypted="true"}'</li>
+	      <li>winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="10240"}'</li>
+		  <li>对于 https:
+		     <ul>
+		         <li><a href="http://www.hansolav.net/blog/SelfsignedSSLCertificatesOnIIS7AndCommonNames.aspx">生成 Windows 证书</a></li>
+		         <li><a href="http://support.microsoft.com/kb/2019527">安装证书</a></li>
+		         <li>winrm create winrm/config/Listener?Address=*+Transport=HTTPS '@{Hostname="HOSTNAME"; CertificateThumbprint="THUMBPRINT"}'</li>
+		     </ul>
+		   </li>
+	    </ul>
+	  </li>
+	</ul>
+
+	最后确保将用户名设置为管理员并输入管理员密码。
+</div>
