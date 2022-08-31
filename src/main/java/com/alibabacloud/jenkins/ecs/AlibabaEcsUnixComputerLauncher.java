@@ -302,7 +302,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                 listener);
         } else {
             conn.exec("sudo apt-get update", remoteLogger);
-            executeRemote(computer, conn, "java -fullversion", "sudo apt-get install -y openjdk-1.8-jdk",
+            executeRemote(computer, conn, "java -fullversion", "sudo apt-get install -y openjdk-8-jdk",
                 remoteLogger,
                 listener);
         }
