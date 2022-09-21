@@ -11,6 +11,7 @@ import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.Availa
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource.SupportedResource;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse.Instance;
 import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
+import com.aliyuncs.ecs.model.v20140526.DescribeLaunchTemplatesResponse.LaunchTemplateSet;
 import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse.Region;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse.SecurityGroup;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse.VSwitch;
@@ -27,6 +28,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -469,6 +471,43 @@ public class AlibabaEcsClient {
             log.error("allocatePublicIp error. instanceId: {}", instanceId, e);
         }
         return null;
+    }
+
+    public LaunchTemplateSet getLaunchTemplates(String launchTemplateId, String regionId) {
+        try {
+            List<String> launchTemplateIdList = new ArrayList<>();
+            launchTemplateIdList.add(launchTemplateId);
+
+            DescribeLaunchTemplatesRequest request = new DescribeLaunchTemplatesRequest();
+            request.setLaunchTemplateIds(launchTemplateIdList);
+            DescribeLaunchTemplatesResponse acsResponse = client.getAcsResponse(request);
+            List<LaunchTemplateSet> launchTemplateSets = acsResponse.getLaunchTemplateSets();
+            log.info("getLaunchTemplates success. launchTemplateId: {}, region: {}", launchTemplateId, regionId);
+            if (launchTemplateSets.size() == 0) {
+                return new LaunchTemplateSet();
+            }
+            return launchTemplateSets.get(0);
+        } catch (Exception e) {
+            log.error("getLaunchTemplates error. launchTemplateId: {}, region:{}. error:{}", launchTemplateId, regionId, e);
+        }
+        return new LaunchTemplateSet();
+    }
+
+    public FormValidation createLaunchTemplate(CreateLaunchTemplateRequest request) {
+        try {
+            List<CreateLaunchTemplateRequest.Tag> tags = Lists.newArrayList();
+            request.setTags(tags);
+            request.setAcceptFormat(FormatType.JSON);
+            request.setIoOptimized("optimized");
+            request.setInstanceChargeType("PostPaid");
+
+            CreateLaunchTemplateResponse acsResponse = client.getAcsResponse(request);
+            log.info("createLaunchTemplate success. acsResponse: {}", JSON.toJSONString(acsResponse));
+            return FormValidation.ok(Messages.AlibabaECSCloud_Success());
+        } catch (ClientException e) {
+            log.error("createLaunchTemplate error:{}. request: {}", e, JSON.toJSONString(request));
+            return FormValidation.error(Messages.AlibabaECSCloud_Error() + e);
+        }
     }
 
 }

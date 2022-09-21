@@ -7,8 +7,10 @@ import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
 import com.alibabacloud.jenkins.ecs.enums.SystemDiskCategory;
 import com.alibabacloud.jenkins.ecs.exception.AlibabaEcsException;
 import com.alibabacloud.jenkins.ecs.util.MinimumInstanceChecker;
+import com.aliyuncs.ecs.model.v20140526.CreateLaunchTemplateRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeImagesRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeLaunchTemplatesResponse.LaunchTemplateSet;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse;
 import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
 import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest.Tag;
@@ -105,6 +107,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public String remoteAdmin;
     public ConnectionStrategy connectionStrategy;
     public EcsTypeData ecsType;
+    public String launchTemplateId;
 
     private transient AlibabaCloud parent;
     private transient Set<LabelAtom> labelSet;
@@ -115,7 +118,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
     @DataBoundConstructor
     public AlibabaEcsFollowerTemplate(String templateName, String image, String zone, String vsw, String chargeType, String instanceType, String initScript, String labelString, String remoteFs, SystemDiskCategory systemDiskCategory, Integer systemDiskSize, int minimumNumberOfInstances, String idleTerminationMinutes,
-                                      String instanceCapStr, String numExecutors, String launchTimeoutStr, List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType, ConnectionStrategy connectionStrategy, String remoteAdmin) {
+                                      String instanceCapStr, String numExecutors, String launchTimeoutStr, List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType, ConnectionStrategy connectionStrategy, String remoteAdmin, String launchTemplateId) {
         this.templateName = templateName;
         this.image = image;
         this.zone = zone;
@@ -130,6 +133,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.chargeType = chargeType;
         this.ecsType= ecsType;
         this.remoteAdmin = remoteAdmin;
+        this.launchTemplateId = launchTemplateId;
         this.connectionStrategy = connectionStrategy == null ? ConnectionStrategy.PRIVATE_IP : connectionStrategy;
         if (CollectionUtils.isEmpty(tags)) {
             this.tags = Lists.newArrayList();
@@ -155,6 +159,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             this.launchTimeout = Integer.parseInt(launchTimeoutStr);
         }
 
+    }
+
+    public String getLaunchTemplateId() {
+        return launchTemplateId;
     }
 
     public int getLaunchTimeout() {
@@ -314,47 +322,52 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             throw new AlibabaEcsException("AlibabaEcsClient connect failure.");
         }
         RunInstancesRequest request = new RunInstancesRequest();
-        request.setVSwitchId(vsw);
-        request.setImageId(image);
-        request.setSecurityGroupId(parent.getSecurityGroup());
-        if (null == parent.getPrivateKey()) {
-            log.error("provision error privateKey is empty.");
-            throw new AlibabaEcsException("provision error privateKey is empty.");
+        if (StringUtils.isNotBlank(launchTemplateId)) {
+            request.setLaunchTemplateId(launchTemplateId);
+        } else {
+            request.setVSwitchId(vsw);
+            request.setImageId(image);
+            request.setSecurityGroupId(parent.getSecurityGroup());
+            if (null == parent.getPrivateKey()) {
+                log.error("provision error privateKey is empty.");
+                throw new AlibabaEcsException("provision error privateKey is empty.");
+            }
+            request.setInstanceType(instanceType);
+            if (null != systemDiskCategory) {
+                request.setSystemDiskCategory(systemDiskCategory.name());
+            }
+            if (null != systemDiskSize) {
+                request.setSystemDiskSize(systemDiskSize.toString());
+            }
+            if (BooleanUtils.isTrue(attachPublicIp)) {
+                request.setInternetMaxBandwidthIn(10);
+                request.setInternetMaxBandwidthOut(10);
+            }
+            if (StringUtils.isNotBlank(userData)) {
+                //set user data
+                String uData = Base64.getEncoder().encodeToString(userData.getBytes(StandardCharsets.UTF_8));
+                request.setUserData(uData);
+            }
+            if (SPOT_INSTANCE_CHARGE_TYPE.equals(chargeType)) {
+                request.setSpotStrategy("SpotAsPriceGo");
+            }
         }
+
         String keyPairName = null;
-        if (!ecsType.isWindows()){
+        if (!ecsType.isWindows()) {
             keyPairName = parent.getPrivateKey().getKeyPairName();
         }
-        if (ecsType.isWindows()){
-            String password = ((WindowsData)ecsType).getPassword().toString();
+        if (ecsType.isWindows()) {
+            String password = ((WindowsData) ecsType).getPassword().toString();
             request.setPassword(password);
-        } else if (StringUtils.isBlank(keyPairName)){
+        } else if (StringUtils.isBlank(keyPairName)) {
             log.error("provision error keyPairName is empty.");
             throw new AlibabaEcsException("provision error keyPairName is empty.");
         }
-
         request.setAmount(amount);
         request.setKeyPairName(keyPairName);
-        request.setInstanceType(instanceType);
-        if (null != systemDiskCategory) {
-            request.setSystemDiskCategory(systemDiskCategory.name());
-        }
-        if (null != systemDiskSize) {
-            request.setSystemDiskSize(systemDiskSize.toString());
-        }
-        if (BooleanUtils.isTrue(attachPublicIp)) {
-            request.setInternetMaxBandwidthIn(10);
-            request.setInternetMaxBandwidthOut(10);
-        }
-        if (StringUtils.isNotBlank(userData)) {
-            //set user data
-            String uData = Base64.getEncoder().encodeToString(userData.getBytes(StandardCharsets.UTF_8));
-            request.setUserData(uData);
-        }
         request.setTags(buildEcsTags());
-        if (SPOT_INSTANCE_CHARGE_TYPE.equals(chargeType)) {
-            request.setSpotStrategy("SpotAsPriceGo");
-        }
+
         List<String> instanceIdSets = connect.runInstances(request);
         if (CollectionUtils.isEmpty(instanceIdSets) || StringUtils.isBlank(instanceIdSets.get(0))) {
             throw new AlibabaEcsException("provision error");
@@ -424,6 +437,31 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             }
             try {
                 Jenkins.checkGoodName(templateName);
+            } catch (Failure e) {
+                return FormValidation.error(e.getMessage());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckLaunchTemplateId(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter String region, @QueryParameter Boolean intranetMaster ,@QueryParameter String launchTemplateId) {
+            if (StringUtils.isBlank(launchTemplateId)) {
+                return FormValidation.ok();
+            }
+            if (StringUtils.isBlank(credentialsId)) {
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
+            }
+            AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
+            if (credentials == null) {
+                log.error("doCheckLaunchTemplateId error. credentials not found. region: {} credentialsId: {}", region, credentialsId);
+                return FormValidation.error(Messages.AlibabaECSCloud_NotFoundCredentials());
+            }
+            AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
+            try {
+                LaunchTemplateSet launchTemplates = client.getLaunchTemplates(launchTemplateId, region);
+
+                if (StringUtils.isBlank(launchTemplates.getLaunchTemplateId())) {
+                    return FormValidation.error(Messages.AlibabaECSCloud_LaunchTemplateIdDoesNotExist());
+                }
             } catch (Failure e) {
                 return FormValidation.error(e.getMessage());
             }
@@ -567,7 +605,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
         @RequirePOST
         public FormValidation doDryRunInstance(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter Boolean intranetMaster, @RelativePath("..") @QueryParameter String region, @RelativePath("..") @QueryParameter String securityGroup, @RelativePath("..") @QueryParameter Boolean attachPublicIp, @QueryParameter String image, @QueryParameter String zone,
-                                               @QueryParameter String vsw, @QueryParameter String instanceType, @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType, @QueryParameter String password) {
+                                               @QueryParameter String vsw, @QueryParameter String instanceType, @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType, @QueryParameter String password, @QueryParameter String launchTemplateId) {
             log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}", credentialsId, intranetMaster, region);
             if (StringUtils.isBlank(credentialsId)) {
                 return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
@@ -582,23 +620,73 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             if (SPOT_INSTANCE_CHARGE_TYPE.equals(chargeType)) {
                 runInstancesRequest.setSpotStrategy("SpotAsPriceGo");
             }
+            if (StringUtils.isNotBlank(launchTemplateId)) {
+                runInstancesRequest.setLaunchTemplateId(launchTemplateId);
+            } else {
+                runInstancesRequest.setImageId(image);
+                runInstancesRequest.setSecurityGroupId(securityGroup);
+                runInstancesRequest.setInstanceType(instanceType);
+                runInstancesRequest.setVSwitchId(vsw);
+                runInstancesRequest.setSystemDiskCategory(systemDiskCategory);
+                runInstancesRequest.setSystemDiskSize(systemDiskSize);
+                if (attachPublicIp) {
+                    runInstancesRequest.setInternetMaxBandwidthOut(10);
+                    runInstancesRequest.setInternetMaxBandwidthIn(10);
+                }
+            }
             runInstancesRequest.setSysRegionId(region);
-            runInstancesRequest.setImageId(image);
             runInstancesRequest.setPassword(password);
-            runInstancesRequest.setSecurityGroupId(securityGroup);
             runInstancesRequest.setZoneId(zone);
-            runInstancesRequest.setVSwitchId(vsw);
-            runInstancesRequest.setInstanceType(instanceType);
             // dry run only support 1
             runInstancesRequest.setMinAmount(1);
-            runInstancesRequest.setSystemDiskCategory(systemDiskCategory);
-            runInstancesRequest.setSystemDiskSize(systemDiskSize);
-            if (attachPublicIp) {
-                runInstancesRequest.setInternetMaxBandwidthOut(10);
-                runInstancesRequest.setInternetMaxBandwidthIn(10);
-            }
             log.info("doDryRunInstance dryRun param runInstancesRequest:{}", JSON.toJSONString(runInstancesRequest));
             return client.druRunInstances(runInstancesRequest);
+        }
+
+        @RequirePOST
+        public FormValidation doCreateLaunchTemplate(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter Boolean intranetMaster, @RelativePath("..") @QueryParameter String region, @RelativePath("..") @QueryParameter String securityGroup, @RelativePath("..") @QueryParameter Boolean attachPublicIp, @QueryParameter String image, @QueryParameter String zone,
+                                               @QueryParameter String vsw, @QueryParameter String instanceType, @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType, @QueryParameter String userData, @QueryParameter String launchTemplateName) {
+            if (StringUtils.isBlank(launchTemplateName)) {
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedLaunchTemplateName());
+            }
+            log.info("doCreateLaunchTemplate info param credentialsId：{},  intranetMaster：{}, region：{}", credentialsId, intranetMaster, region);
+            if (StringUtils.isBlank(credentialsId)) {
+                return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
+            }
+            AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
+            if (credentials == null) {
+                log.error("doCreateLaunchTemplate error. credentials not found. region: {} credentialsId: {}", region, credentialsId);
+                return FormValidation.error(Messages.AlibabaECSCloud_NotFoundCredentials());
+            }
+            AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
+            CreateLaunchTemplateRequest request = new CreateLaunchTemplateRequest();
+            request.setLaunchTemplateName(launchTemplateName);
+            request.setZoneId(zone);
+            request.setRegionId(region);
+            request.setVSwitchId(vsw);
+            request.setImageId(image);
+            request.setSecurityGroupId(securityGroup);
+            request.setInstanceType(instanceType);
+            if (null != systemDiskCategory) {
+                request.setSystemDiskCategory(systemDiskCategory);
+            }
+            if (null != systemDiskSize) {
+                request.setSystemDiskSize(Integer.valueOf(systemDiskSize));
+            }
+            if (BooleanUtils.isTrue(attachPublicIp)) {
+                request.setInternetMaxBandwidthIn(10);
+                request.setInternetMaxBandwidthOut(10);
+            }
+            if (StringUtils.isNotBlank(userData)) {
+                //set user data
+                String uData = Base64.getEncoder().encodeToString(userData.getBytes(StandardCharsets.UTF_8));
+                request.setUserData(uData);
+            }
+            if (SPOT_INSTANCE_CHARGE_TYPE.equals(chargeType)) {
+                request.setSpotStrategy("SpotAsPriceGo");
+            }
+            log.info("doCreateLaunchTemplate param createLaunchTemplateRequest:{}", JSON.toJSONString(request));
+            return client.createLaunchTemplate(request);
         }
     }
 

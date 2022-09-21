@@ -73,7 +73,7 @@ public class AlibabaEcsFollowerTemplateTest {
         String instanceCapStr = "2";
         WindowsData windowsData = new WindowsData("X123456x", false, "180", true, false);
         AlibabaEcsFollowerTemplate follower = new AlibabaEcsFollowerTemplate(templateName, image, zone, vsw, chargeType, instanceType, initScript, labelString, remoteFS, systemDiskCategory, systemDiskSize, minimumNumberOfInstances,
-                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData", windowsData, ConnectionStrategy.PUBLIC_IP, "");
+                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData", windowsData, ConnectionStrategy.PUBLIC_IP, "", "");
         follower.setParent(alibabaCloud);
         List<String> instanceIds = follower.provisionSpot(1, true);
         Assert.assertEquals(instanceIds, instances);

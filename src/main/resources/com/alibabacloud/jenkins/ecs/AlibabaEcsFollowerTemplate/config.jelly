@@ -73,6 +73,15 @@
             <f:entry title="${%User Data}" field="userData">
                 <f:textarea/>
             </f:entry>
+            <f:entry title="${%Launch_Template_Id}" field="launchTemplateId">
+                <f:textbox/>
+            </f:entry>
+            <f:entry title="${%Launch_Template_Name}" field="launchTemplateName">
+                <f:textbox/>
+            </f:entry>
+            <f:validateButton title="${%CreateLaunchTemplate}" progress="${%Creating...}" method="createLaunchTemplate"
+                              with="credentialsId,intranetMaster,region,securityGroup,attachPublicIp,image,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,chargeType,userData,launchTemplateName"/>
+
         </f:advanced>
         <f:validateButton title="${%TestCreateEcs}" progress="${%Testing...}" method="dryRunInstance"
                           with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,amiType,password"/>
