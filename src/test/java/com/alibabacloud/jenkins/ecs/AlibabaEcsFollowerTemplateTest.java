@@ -2,6 +2,7 @@ package com.alibabacloud.jenkins.ecs;
 
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
 import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
+import com.alibabacloud.jenkins.ecs.enums.DataDiskCategory;
 import com.alibabacloud.jenkins.ecs.enums.SystemDiskCategory;
 import com.google.common.collect.Lists;
 import org.junit.Assert;
@@ -71,9 +72,13 @@ public class AlibabaEcsFollowerTemplateTest {
         String vsw = "vsw-1";
         int minimumNumberOfInstances = 1;
         String instanceCapStr = "2";
+        String dataDiskSize= "10";
+        DataDiskCategory dataDiskCategory = DataDiskCategory.cloud;
+        String mountQuantity = "4";
+        boolean mountDataDisk = true;
 
         AlibabaEcsFollowerTemplate follower = new AlibabaEcsFollowerTemplate(templateName, image, zone, vsw, chargeType, instanceType, initScript, labelString, remoteFS, systemDiskCategory, systemDiskSize, minimumNumberOfInstances,
-                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData");
+                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData", dataDiskSize, dataDiskCategory, mountQuantity, mountDataDisk);
         follower.setParent(alibabaCloud);
         List<String> instanceIds = follower.provisionSpot(1, true);
         Assert.assertEquals(instanceIds, instances);

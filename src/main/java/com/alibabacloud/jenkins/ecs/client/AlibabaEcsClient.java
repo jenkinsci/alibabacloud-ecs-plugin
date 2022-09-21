@@ -350,6 +350,18 @@ public class AlibabaEcsClient {
         return Lists.newArrayList();
     }
 
+    public DescribeInstanceTypesResponse describeInstanceTypes(String instanceType) {
+        try {
+            DescribeInstanceTypesRequest describeInstanceTypesRequest = new DescribeInstanceTypesRequest();
+            describeInstanceTypesRequest.setMaxResults(10L);
+            describeInstanceTypesRequest.setInstanceTypess(java.util.Arrays.asList(instanceType));
+            return client.getAcsResponse(describeInstanceTypesRequest);
+        } catch (Exception e) {
+            log.error("describeSpotInstanceTypes error.", e);
+        }
+        return new DescribeInstanceTypesResponse();
+    }
+
     public List<KeyPair> describeKeyPairs(@Nullable String keyPairName, @Nullable String pfp) {
         try {
             DescribeKeyPairsRequest request = new DescribeKeyPairsRequest();

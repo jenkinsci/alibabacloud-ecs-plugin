@@ -17,8 +17,8 @@
         <jenkins.version>2.190.1</jenkins.version>
         <java.level>8</java.level>
         <google.guava.version>11.0.1</google.guava.version>
-        <aliyun-java-sdk.version>4.5.6</aliyun-java-sdk.version>
-        <aliyun-ecs-java-sdk.version>4.19.9</aliyun-ecs-java-sdk.version>
+        <aliyun-java-sdk.version>4.5.30</aliyun-java-sdk.version>
+        <aliyun-ecs-java-sdk.version>4.24.23</aliyun-ecs-java-sdk.version>
     </properties>
     <name>Alibaba Cloud ECS Plugin</name>
     <description>This is a Jenkins plugin to support ephemeral Jenkins agents on Alibaba Cloud ECS</description>
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.30</version>
+            <version>1.7.32</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

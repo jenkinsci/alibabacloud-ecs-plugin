@@ -36,6 +36,18 @@
         <f:entry title="${%System_Disk_Size}" field="systemDiskSize">
             <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
         </f:entry>
+        <f:optionalBlock title="${%MountDataDisk}" field="mountDataDisk" checked="${instance.isMountDataDisk()}"
+                         inline="true">
+            <f:entry title="${%DataDiskCategory}" field="dataDiskCategory">
+                <f:enum>${it.name()}</f:enum>
+            </f:entry>
+            <f:entry title="${%DataDiskSize}" field="dataDiskSize">
+                <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
+            </f:entry>
+            <f:entry title="${%MountQuantity}" field="mountQuantity">
+                <f:textbox/>
+            </f:entry>
+        </f:optionalBlock>
         <f:advanced title="${%Advanced}">
             <f:entry title="${%Minimum_number_of_instances}" field="minimumNumberOfInstances">
                 <f:textbox default="1"/>
@@ -68,7 +80,7 @@
             </f:entry>
         </f:advanced>
         <f:validateButton title="${%TestCreateEcs}" progress="${%Testing...}" method="dryRunInstance"
-                          with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData"/>
+                          with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,mountDataDisk,dataDiskCategory,dataDiskSize,mountQuantity"/>
         <f:entry title="">
             <div align="right">
                 <f:repeatableDeleteButton value="Delete Image"/>
