@@ -3,18 +3,22 @@ package com.alibabacloud.jenkins.ecs;
 import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
 import com.alibabacloud.jenkins.ecs.util.CloudHelper;
 import com.alibabacloud.jenkins.ecs.util.DateUtils;
+import com.alibabacloud.jenkins.ecs.win.ECSWindowsLauncher;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse.Instance;
 import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
 import com.aliyuncs.exceptions.ClientException;
 import com.google.common.collect.Lists;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.model.Computer;
+import hudson.model.Descriptor;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Node;
 import hudson.model.Slave;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.RetentionStrategy;
+import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONObject;
@@ -58,18 +62,26 @@ public class AlibabaEcsSpotFollower extends Slave {
     private transient String publicIp;
     private transient String keyPairName;
 
+
+    private transient long createdTime;
+
     /* The time at which we fetched the last instance data */
     protected transient long lastFetchTime;
+
     protected transient Instance lastFetchInstance = null;
     /**
      * in seconds
      */
     private final int launchTimeout;
 
+    private transient EcsTypeData ecsType;
+
+    private String remoteAdmin;
+
     public transient List<AlibabaEcsTag> tags = Lists.newArrayList();
     private boolean isConnected = false;
 
-    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, RetentionStrategy<AlibabaEcsComputer> retentionStrategy, String userData) throws IOException, FormException {
+    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, RetentionStrategy<AlibabaEcsComputer> retentionStrategy, String userData, EcsTypeData ecsType, String remoteAdmin) throws IOException, FormException {
         super(name, remoteFS, launcher);
         this.ecsInstanceId = ecsInstanceId;
         this.cloudName = cloudName;
@@ -79,6 +91,8 @@ public class AlibabaEcsSpotFollower extends Slave {
         this.tags = tags;
         this.launchTimeout = launchTimeout;
         this.idleTerminationMinutes = idleTerminationMinutes;
+        this.ecsType = ecsType;
+        this.remoteAdmin = remoteAdmin;
         setLabelString(labelString);
         setRetentionStrategy(retentionStrategy);
         setNumExecutors(numExecutors);
@@ -87,9 +101,8 @@ public class AlibabaEcsSpotFollower extends Slave {
     }
 
     @DataBoundConstructor
-    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, String userData) throws FormException, IOException {
-        // TODO: create Launcher by ami type
-        this(ecsInstanceId, name, new AlibabaEcsUnixComputerLauncher(), remoteFS, cloudName, labelString, initScript, templateName, numExecutors, launchTimeout, tags, idleTerminationMinutes, new AlibabaEcsRetentionStrategy(idleTerminationMinutes), userData);
+    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, String userData, EcsTypeData ecsType, String remoteAdmin) throws FormException, IOException {
+        this(ecsInstanceId, name, (null != ecsType && ecsType.isWindows() ? new ECSWindowsLauncher() : new AlibabaEcsUnixComputerLauncher()) , remoteFS, cloudName, labelString, initScript, templateName, numExecutors, launchTimeout, tags, idleTerminationMinutes, new AlibabaEcsRetentionStrategy(idleTerminationMinutes), userData, ecsType, remoteAdmin);
     }
 
     @Override
@@ -114,6 +127,11 @@ public class AlibabaEcsSpotFollower extends Slave {
         return launchTimeout * 1000L;
     }
 
+    public long getCreatedTime() {
+        fetchLiveInstanceData(false);
+        return createdTime;
+    }
+
     private void fetchLiveInstanceData(boolean force) {
         /*
          * If we've grabbed the data recently, don't bother getting it again unless we are forced
@@ -135,7 +153,9 @@ public class AlibabaEcsSpotFollower extends Slave {
             log.error("fetchLiveInstanceData error while get " + getEcsInstanceId(), e);
             return;
         }
-
+        if (null != i){
+            createdTime = DateUtils.parse(i.getCreationTime()).getTime();
+        }
 
         lastFetchTime = now;
         lastFetchInstance = i;
@@ -207,6 +227,24 @@ public class AlibabaEcsSpotFollower extends Slave {
         return keyPairName;
     }
 
+    public String getRemoteAdmin() {
+        if (remoteAdmin == null || remoteAdmin.length() == 0)
+            return ecsType.isWindows() ? "Administrator" : "root";
+        return remoteAdmin;
+    }
+
+    public Secret getAdminPassword() {
+        return ecsType.isWindows() ? ((WindowsData) ecsType).getPassword() : Secret.fromString("");
+    }
+
+    public boolean isUseHTTPS() {
+        return ecsType.isWindows() && ((WindowsData) ecsType).isUseHTTPS();
+    }
+
+    public int getBootDelay() {
+        return ecsType.getBootDelayInMillis();
+    }
+
     public KeyPair getKeyPair() throws ClientException {
         String keyPairName1 = getKeyPairName();
         if (StringUtils.isBlank(keyPairName1)) {
@@ -276,7 +314,6 @@ public class AlibabaEcsSpotFollower extends Slave {
     public String getInitScript() {
         return initScript;
     }
-
     public String getUserData() {
         return userData;
     }
@@ -344,6 +381,15 @@ public class AlibabaEcsSpotFollower extends Slave {
         }
         return status;
     }
+
+    public boolean isAllowSelfSignedCertificate() {
+        return ecsType.isWindows() && ((WindowsData) ecsType).isAllowSelfSignedCertificate();
+    }
+
+    public boolean isSpecifyPassword() {
+        return ecsType.isWindows() && ((WindowsData) ecsType).isSpecifyPassword();
+    }
+
 
     public String forceTerminate() {
         String currStatus = status();
@@ -443,5 +489,10 @@ public class AlibabaEcsSpotFollower extends Slave {
         public boolean isInstantiable() {
             return false;
         }
+
+        public List<Descriptor<EcsTypeData>> getEcsTypeDescriptors() {
+            return Jenkins.get().getDescriptorList(EcsTypeData.class);
+        }
+
     }
 }
