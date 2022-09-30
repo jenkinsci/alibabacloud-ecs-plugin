@@ -48,6 +48,7 @@
                 <f:textbox/>
             </f:entry>
         </f:optionalBlock>
+        <f:dropdownDescriptorSelector title="${%ECS_Type}" field="ecsType" descriptors="${descriptor.getEcsTypeDescriptors()}" />
         <f:advanced title="${%Advanced}">
             <f:entry title="${%Minimum_number_of_instances}" field="minimumNumberOfInstances">
                 <f:textbox default="1"/>
@@ -61,9 +62,15 @@
             <f:entry title="${%Launch_Timeout_In_Seconds}" field="launchTimeoutStr">
                 <f:textbox default="600"/>
             </f:entry>
+
+            <f:entry title="${%Connection Strategy}" field="connectionStrategy">
+                <f:select default="${descriptor.getDefaultConnectionStrategy()}"/>
+            </f:entry>
+
             <f:entry title="${%Number_of_Executors}" field="numExecutors">
                 <f:textbox default="4"/>
             </f:entry>
+
             <f:entry title="${%Labels}" field="labelString">
                 <f:textbox/>
             </f:entry>
@@ -80,7 +87,7 @@
             </f:entry>
         </f:advanced>
         <f:validateButton title="${%TestCreateEcs}" progress="${%Testing...}" method="dryRunInstance"
-                          with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,mountDataDisk,dataDiskCategory,dataDiskSize,mountQuantity"/>
+                          with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,amiType,password, mountDataDisk,dataDiskCategory,dataDiskSize,mountQuantity"/>
         <f:entry title="">
             <div align="right">
                 <f:repeatableDeleteButton value="Delete Image"/>

@@ -42,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by kunlun.ykl on 2020/8/25.
@@ -124,6 +126,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
     private final String idleTerminationMinutes;
 
+    public String remoteAdmin;
+    public ConnectionStrategy connectionStrategy;
+    public EcsTypeData ecsType;
 
     private transient AlibabaCloud parent;
     private transient Set<LabelAtom> labelSet;
@@ -134,7 +139,8 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public static final Integer DEFAULT_REMOVE_CLOUD_DISK_COUNT = 1;
 
     @DataBoundConstructor
-    public AlibabaEcsFollowerTemplate(String templateName, String image, String zone, String vsw, String chargeType, String instanceType, String initScript, String labelString, String remoteFs, SystemDiskCategory systemDiskCategory, Integer systemDiskSize, int minimumNumberOfInstances, String idleTerminationMinutes, String instanceCapStr, String numExecutors, String launchTimeoutStr, List<AlibabaEcsTag> tags, String userData, String dataDiskSize, DataDiskCategory dataDiskCategory, String mountQuantity, boolean mountDataDisk) {
+    public AlibabaEcsFollowerTemplate(String templateName, String image, String zone, String vsw, String chargeType, String instanceType, String initScript, String labelString, String remoteFs, SystemDiskCategory systemDiskCategory, Integer systemDiskSize, int minimumNumberOfInstances, String idleTerminationMinutes,
+                                      String instanceCapStr, String numExecutors, String launchTimeoutStr, List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType, ConnectionStrategy connectionStrategy, String remoteAdmin, String dataDiskSize, DataDiskCategory dataDiskCategory, String mountQuantity, boolean mountDataDisk) {
         this.templateName = templateName;
         this.image = image;
         this.zone = zone;
@@ -151,6 +157,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.dataDiskCategory = dataDiskCategory;
         this.mountQuantity = mountQuantity;
         this.mountDataDisk = mountDataDisk;
+        this.ecsType= ecsType;
+        this.remoteAdmin = remoteAdmin;
+        this.connectionStrategy = connectionStrategy == null ? ConnectionStrategy.PRIVATE_IP : connectionStrategy;
         if (CollectionUtils.isEmpty(tags)) {
             this.tags = Lists.newArrayList();
         } else {
@@ -220,6 +229,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             e.printStackTrace();
             return DEFAULT_NUM_OF_EXECUTORS;
         }
+    }
+
+    public String getDefaultConnectionStrategy() {
+        return ConnectionStrategy.PRIVATE_IP.name();
     }
 
     protected Object readResolve() {
@@ -320,11 +333,19 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return tags;
     }
 
+    public EcsTypeData getEcsType() {
+        return ecsType;
+    }
+
+    public void setEcsTypeData(EcsTypeData ecsType) {
+        this.ecsType = ecsType;
+    }
+
     public List<AlibabaEcsSpotFollower> provision(int amount, boolean attachPublicIp) throws Exception {
         List<AlibabaEcsSpotFollower> list = Lists.newArrayList();
         List<String> instanceIds = provisionSpot(amount, attachPublicIp);
         for (String instanceId : instanceIds) {
-            AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId, templateName + "-" + instanceId, remoteFs, parent.getCloudName(), labels, initScript, getTemplateName(), getNumExecutors(), getLaunchTimeout(), getTags(), getIdleTerminationMinutes(), userData);
+            AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId, templateName + "-" + instanceId, remoteFs, parent.getCloudName(), labels, initScript, getTemplateName(), getNumExecutors(), getLaunchTimeout(), getTags(), getIdleTerminationMinutes(), userData, ecsType, remoteAdmin);
             list.add(alibabaEcsSpotFollower);
         }
         return list;
@@ -345,11 +366,18 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             log.error("provision error privateKey is empty.");
             throw new AlibabaEcsException("provision error privateKey is empty.");
         }
-        String keyPairName = parent.getPrivateKey().getKeyPairName();
-        if (StringUtils.isBlank(keyPairName)) {
+        String keyPairName = null;
+        if (!ecsType.isWindows()){
+            keyPairName = parent.getPrivateKey().getKeyPairName();
+        }
+        if (ecsType.isWindows()){
+            String password = ((WindowsData)ecsType).getPassword().toString();
+            request.setPassword(password);
+        } else if (StringUtils.isBlank(keyPairName)){
             log.error("provision error keyPairName is empty.");
             throw new AlibabaEcsException("provision error keyPairName is empty.");
         }
+
         request.setAmount(amount);
         request.setKeyPairName(keyPairName);
         request.setInstanceType(instanceType);
@@ -438,6 +466,25 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         public String getDisplayName() {
             return "";
         }
+
+        public List<Descriptor<EcsTypeData>> getEcsTypeDescriptors() {
+            return Jenkins.get().getDescriptorList(EcsTypeData.class);
+        }
+
+        public ListBoxModel doFillConnectionStrategyItems(@QueryParameter String connectionStrategy) {
+            return Stream.of(ConnectionStrategy.values())
+                .map(v -> {
+                    if (v.name().equals(connectionStrategy)) {
+                        return new ListBoxModel.Option(v.getDisplayText(), v.name(), true);
+                    } else {
+                        String displayText = v.getDisplayText();
+                        String name = v.name();
+                        return new ListBoxModel.Option(v.getDisplayText(), v.name(), false);
+                    }
+                })
+                .collect(Collectors.toCollection(ListBoxModel::new));
+        }
+
         public FormValidation doCheckTemplateName(@QueryParameter String templateName) {
             Jenkins.get().hasPermission(Jenkins.ADMINISTER);
             if (StringUtils.isBlank(templateName)) {
@@ -627,11 +674,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         }
 
         @RequirePOST
-        public FormValidation doDryRunInstance(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter Boolean intranetMaster,
-                                               @RelativePath("..") @QueryParameter String region, @RelativePath("..") @QueryParameter String securityGroup, @RelativePath("..") @QueryParameter Boolean attachPublicIp,
-                                               @QueryParameter String image, @QueryParameter String zone, @QueryParameter String vsw, @QueryParameter String instanceType,
-                                               @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType,
-                                               @QueryParameter boolean mountDataDisk, @QueryParameter String dataDiskSize, @QueryParameter DataDiskCategory dataDiskCategory, @QueryParameter String mountQuantity) {
+
+        public FormValidation doDryRunInstance(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter Boolean intranetMaster, @RelativePath("..") @QueryParameter String region, @RelativePath("..") @QueryParameter String securityGroup, @RelativePath("..") @QueryParameter Boolean attachPublicIp, @QueryParameter String image, @QueryParameter String zone,
+                                               @QueryParameter String vsw, @QueryParameter String instanceType, @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType, @QueryParameter String password,   @QueryParameter boolean mountDataDisk, @QueryParameter String dataDiskSize, @QueryParameter DataDiskCategory dataDiskCategory, @QueryParameter String mountQuantity) {
             log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}", credentialsId, intranetMaster, region);
             if (StringUtils.isBlank(credentialsId)) {
                 return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
@@ -652,6 +697,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             }
             runInstancesRequest.setSysRegionId(region);
             runInstancesRequest.setImageId(image);
+            runInstancesRequest.setPassword(password);
             runInstancesRequest.setSecurityGroupId(securityGroup);
             runInstancesRequest.setZoneId(zone);
             runInstancesRequest.setVSwitchId(vsw);

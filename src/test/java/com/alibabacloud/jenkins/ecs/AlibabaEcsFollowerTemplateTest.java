@@ -76,9 +76,9 @@ public class AlibabaEcsFollowerTemplateTest {
         DataDiskCategory dataDiskCategory = DataDiskCategory.cloud;
         String mountQuantity = "4";
         boolean mountDataDisk = true;
-
+        WindowsData windowsData = new WindowsData("X123456x", false, "180", true, false);
         AlibabaEcsFollowerTemplate follower = new AlibabaEcsFollowerTemplate(templateName, image, zone, vsw, chargeType, instanceType, initScript, labelString, remoteFS, systemDiskCategory, systemDiskSize, minimumNumberOfInstances,
-                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData", dataDiskSize, dataDiskCategory, mountQuantity, mountDataDisk);
+                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData", windowsData, ConnectionStrategy.PUBLIC_IP, "",dataDiskSize, dataDiskCategory, mountQuantity, mountDataDisk);
         follower.setParent(alibabaCloud);
         List<String> instanceIds = follower.provisionSpot(1, true);
         Assert.assertEquals(instanceIds, instances);
