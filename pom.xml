@@ -9,7 +9,7 @@
     </parent>
     <groupId>com.alibabacloud.jenkins</groupId>
     <artifactId>alibabacloud-ecs</artifactId>
-    <version>1.11-SNAPSHOT</version>
+    <version>alibabacloud-ecs-1.11</version>
     <packaging>hpi</packaging>
     <properties>
         <revision>1.0</revision>
@@ -249,4 +249,8 @@
             </activation>
         </profile>
     </profiles>
+
+  <scm>
+    <tag>alibabacloud-ecs-alibabacloud-ecs-1.11</tag>
+  </scm>
 </project>
