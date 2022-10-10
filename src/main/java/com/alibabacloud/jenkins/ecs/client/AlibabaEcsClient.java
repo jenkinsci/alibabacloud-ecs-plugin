@@ -1,6 +1,9 @@
 package com.alibabacloud.jenkins.ecs.client;
 
 import com.alibaba.fastjson.JSON;
+import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials;
+import com.alibabacloud.credentials.plugin.auth.AlibabaSessionTokenCredentials;
+import com.alibabacloud.credentials.plugin.util.CredentialsHelper;
 import com.alibabacloud.jenkins.ecs.Messages;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
@@ -42,9 +45,17 @@ public class AlibabaEcsClient {
     private Boolean intranetMaster = Boolean.FALSE;
 
     public AlibabaEcsClient(AlibabaCloudCredentials credentials, String regionNo, Boolean intranetMaster) {
-        IClientProfile profile = DefaultProfile.getProfile(regionNo,
-                credentials.getAccessKeyId(),
-                credentials.getAccessKeySecret());
+        IClientProfile profile;
+        if (CredentialsHelper.isSessionTokenCredentials(credentials)) {
+            profile = DefaultProfile.getProfile(regionNo,
+                    credentials.getAccessKeyId(),
+                    credentials.getAccessKeySecret(),
+                    ((AlibabaSessionTokenCredentials) credentials).getSecretToken());
+        } else {
+            profile = DefaultProfile.getProfile(regionNo,
+                    credentials.getAccessKeyId(),
+                    credentials.getAccessKeySecret());
+        }
         if (intranetMaster != null && intranetMaster) {
             // use vpc endpoint if jenkins master in vpc private env
             profile.enableUsingVpcEndpoint();

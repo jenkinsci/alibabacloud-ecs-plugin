@@ -173,7 +173,7 @@
         <dependency>
             <groupId>com.alibabacloud.jenkins</groupId>
             <artifactId>alibabacloud-credentials</artifactId>
-            <version>1.1</version>
+            <version>1.2</version>
         </dependency>
         <dependency>
             <groupId>com.github.seancfoley</groupId>
