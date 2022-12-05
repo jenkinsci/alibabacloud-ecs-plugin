@@ -1,5 +1,12 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
 import com.alibabacloud.jenkins.ecs.exception.AlibabaEcsException;
 import com.alibabacloud.jenkins.ecs.util.LogHelper;
@@ -16,9 +23,6 @@ import jenkins.model.Jenkins;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Created by kunlun.ykl on 2020/8/24.
@@ -74,13 +78,13 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
             // 4. 启动follower的jenkins进程
             String workDir = StringUtils.isNotBlank(remoteFs) ? remoteFs : tmpDir;
             String launchString
-                    = "java -jar " + tmpDir + "/remoting.jar -workDir " + workDir + " -jar-cache "
-                    + workDir + "/remoting/jarCache";
+                = "java -jar " + tmpDir + "/remoting.jar -workDir " + workDir + " -jar-cache "
+                + workDir + "/remoting/jarCache";
             String sshClientLaunchString = String.format("ssh -o StrictHostKeyChecking=no -i %s %s@%s -p %d %s",
-                    identityKeyFile.getAbsolutePath(), "root",
-                    hostIp,
-                    22,
-                    launchString);
+                identityKeyFile.getAbsolutePath(), node.getRemoteAdmin(),
+                hostIp,
+                22,
+                launchString);
             CommandLauncher commandLauncher = new CommandLauncher(sshClientLaunchString, null);
             commandLauncher.launch(computer, listener);
         } finally {
@@ -166,8 +170,8 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
                 if (null != alibabaCloud) {
                     AlibabaPrivateKey key = alibabaCloud.resolvePrivateKey();
                     if (null != key) {
-                        b = conn.authenticateWithPublicKey("root",
-                                key.getPrivateKey().toCharArray(), "");
+                        b = conn.authenticateWithPublicKey(follower.getRemoteAdmin(),
+                            key.getPrivateKey().toCharArray(), "");
                     }
 
                 }

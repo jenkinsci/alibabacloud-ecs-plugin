@@ -1,5 +1,13 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nonnull;
+
 import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
 import com.alibabacloud.jenkins.ecs.util.CloudHelper;
 import com.alibabacloud.jenkins.ecs.util.DateUtils;
@@ -10,7 +18,6 @@ import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
 import com.aliyuncs.exceptions.ClientException;
 import com.google.common.collect.Lists;
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.Descriptor.FormException;
@@ -26,13 +33,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by kunlun.ykl on 2020/8/24.

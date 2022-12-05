@@ -31,8 +31,9 @@ See the [中文文档](README_ZH_CN.md) for Chinese readme.
          * [Configure "Minimum number of instances" **-Optional**](#minimumNumberOfInstance)
          * [Configure "Init Script" **-Optional**](#configureInitScript)
          * [Configure "Labels" **-Optional**](#configureLabels)
-         * [Configure "Remote FS root" **-Optional**](#remoteFSRoot)
-         * [Configure System Disk Category **-Optional**](#systemDiskCategory)
+        * [Configure "Remote FS root" **-Optional**](#remoteFSRoot)
+        * [Configure "Remote user" **-Optional**](#remoteAdmin)
+        * [Configure System Disk Category **-Optional**](#systemDiskCategory)
          * [Configure System Disk Size **-Optional**](#systemDiskSize)
          * [Configure Assign Public Ip](#publicIp)
       * [Provision Nodes ](#provisionNodes)
@@ -192,23 +193,27 @@ This plugin will create the follower according to the number filled in. The numb
 
 ![](docs/images/jenkins_configure_instance_count.png)
 
-
 ### 4.15 Configure "Init Script" **-Optional** <a id="configureInitScript"></a>
-Init script is the shell script to be run on the newly launched follower node instance, before Jenkins starts launching a follower node. 
-This is also a good place to install additional packages that you need for your builds and tests.
+
+Init script is the shell script to be run on the newly launched follower node instance, before Jenkins starts launching
+a follower node. This is also a good place to install additional packages that you need for your builds and tests.
 
 ### 4.16 Configure "Labels" **-Optional** <a id="configureLabels"></a>
 
 ### 4.17 Configure "Remote FS root" **-Optional** <a id="remoteFSRoot"></a>
+
+### 4.18 Configure "Remote user"" **-Optional** <a id="remoteAdmin"></a>
 
 ### 4.18 Configure "System Disk Category" **-Optional** <a id="systemDiskCategory"></a>
 
 ### 4.19 Configure "System Disk Size" **-Optional** <a id="systemDiskSize"></a>
 
 ### 4.20 Configure "Assign Public Ip" <a id="publicIp"></a>
+
 Whether to set the public network ip
 
 ## STEP 4: Provision Nodes <a id="provisionNodes"></a>
+
 * After saving successfully, enter new nodes to add nodes. The initialization status is as follows:
 
 ![](docs/images/jenkins.nodes.png)
@@ -261,7 +266,8 @@ def AlibabaCloudFollowerTemplateParameters = [
         vsw                     : '${your-vsw-id}',
         initScript              : "",
         labelString             : 'Jenkins Agent',
-        remoteFs                : "/root"
+        remoteFs                : "/root",
+        remoteAdmin             : "root"
 ]
 
 def AlibabaCloudParameters = [
