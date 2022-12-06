@@ -228,8 +228,9 @@ public class AlibabaEcsSpotFollower extends Slave {
     }
 
     public String getRemoteAdmin() {
-        if (remoteAdmin == null || remoteAdmin.length() == 0)
+        if (StringUtils.isBlank(remoteAdmin)) {
             return ecsType.isWindows() ? "Administrator" : "root";
+        }
         return remoteAdmin;
     }
 
