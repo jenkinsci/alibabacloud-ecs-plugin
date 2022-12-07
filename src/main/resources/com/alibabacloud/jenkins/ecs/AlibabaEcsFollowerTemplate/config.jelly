@@ -30,6 +30,9 @@
         <f:entry title="${%Remote_FS_root}" field="remoteFs">
             <f:textbox default="${descriptor.defaultRemoteFs}"/>
         </f:entry>
+        <f:entry title="${%Remote user}" field="remoteAdmin">
+            <f:textbox default="${descriptor.defaultRemoteAdmin}"/>
+        </f:entry>
         <f:entry title="${%System_Disk_Category}" field="systemDiskCategory">
             <f:enum>${it.name()}</f:enum>
         </f:entry>

@@ -30,8 +30,9 @@
          * [配置“Minimum number of instances” **-可选**](#minimumNumberOfInstance)
          * [配置“Init Script” **-可选**](#configureInitScript)
          * [配置“Labels” **-可选**](#configureLabels)
-         * [配置“Remote FS root” **-可选**](#remoteFSRoot)
-         * [配置“System Disk Category” **-可选-**](#systemDiskCategory)
+        * [配置“Remote FS root” **-可选**](#remoteFSRoot)
+        * [配置“Remote user” **-可选**](#remoteAdmin)
+        * [配置“System Disk Category” **-可选-**](#systemDiskCategory)
          * [配置“System Disk Size” **-可选-**](#systemDiskSize)
          * [勾选“Assign Public Ip“](#publicIp)
       * [添加节点](#provisionNodes)
@@ -189,23 +190,25 @@ Select the right instance type that the slave ECS node will be provisioned. And 
 
 ![](docs/images/jenkins_configure_instance_count.png)
 
-
 ### 4.15 配置 "Init Script" **-可选** <a id="configureInitScript"></a>
-Init脚本是在Jenkins开始启动跟随者节点之前在新启动的跟随者节点实例上运行的Shell脚本。
-这也是安装构建和测试所需的其他软件包的好地方。
+
+Init脚本是在Jenkins开始启动跟随者节点之前在新启动的跟随者节点实例上运行的Shell脚本。 这也是安装构建和测试所需的其他软件包的好地方。
 
 ### 4.16 配置 "Labels" **-可选** <a id="configureLabels"></a>
 
 ### 4.17 配置 "Remote FS root" **-可选** <a id="remoteFSRoot"></a>
 
+### 4.18 配置 "Remote user"" **-可选** <a id="remoteAdmin"></a>
+
 * [配置“System Disk Size” **-可选-**](#systemDiskSize)
 * [勾选 Assign Public Ip](#publicIp)
 
-### 4.18 配置 "System Disk Category" <a id="systemDiskCategory"></a>
- 
-### 4.19 配置 "System Disk Size" <a id = "systemDiskSize"></a>
+### 4.19 配置 "System Disk Category" <a id="systemDiskCategory"></a>
 
-### 4.20 勾选 "Assign Public Ip" <a id = "publicIp"></a>
+### 4.20 配置 "System Disk Size" <a id = "systemDiskSize"></a>
+
+### 4.21 勾选 "Assign Public Ip" <a id = "publicIp"></a>
+
 是否设置公网ip
 
 ## 步骤4: 添加节点 <a id="provisionNodes"></a>
@@ -259,7 +262,8 @@ def AlibabaCloudFollowerTemplateParameters = [
         vsw                     : '${your-vsw-id}',
         initScript              : "",
         labelString             : 'Jenkins Agent',
-        remoteFs                : "/root"
+        remoteFs                : "/root",
+        remoteAdmin             : "/remoteAdmin"
 ]
 
 def AlibabaCloudParameters = [

@@ -38,6 +38,9 @@
                 <f:entry title="remoteFS" field="remoteFS">
                     <f:textbox value="${instance.remoteFS}"/>
                 </f:entry>
+                <f:entry title="${%Remote user}" field="remoteAdmin">
+                    <f:textbox />
+                </f:entry>
                 <f:entry title="${%Init Script}" field="initScript">
                     <f:textarea/>
                 </f:entry>

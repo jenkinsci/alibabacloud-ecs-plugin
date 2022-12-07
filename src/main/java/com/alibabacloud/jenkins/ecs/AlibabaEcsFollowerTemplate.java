@@ -1,6 +1,15 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.alibaba.fastjson.JSON;
+
 import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials;
 import com.alibabacloud.credentials.plugin.util.CredentialsHelper;
 import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
@@ -20,7 +29,11 @@ import hudson.Extension;
 import hudson.RelativePath;
 import hudson.Util;
 import hudson.XmlFile;
-import hudson.model.*;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
+import hudson.model.Failure;
+import hudson.model.Label;
+import hudson.model.Saveable;
 import hudson.model.labels.LabelAtom;
 import hudson.model.listeners.SaveableListener;
 import hudson.security.Permission;
@@ -36,14 +49,6 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by kunlun.ykl on 2020/8/25.
@@ -172,6 +177,11 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             this.remoteFs = remoteFs;
         } else {
             this.remoteFs = DescriptorImpl.defaultRemoteFs;
+        }
+        if (StringUtils.isNotBlank(remoteAdmin)) {
+            this.remoteAdmin = remoteAdmin;
+        } else {
+            this.remoteAdmin = DescriptorImpl.defaultRemoteAdmin;
         }
         if (null == instanceCapStr || instanceCapStr.isEmpty()) {
             this.instanceCap = Integer.MAX_VALUE;
@@ -461,6 +471,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public static final class DescriptorImpl extends Descriptor<AlibabaEcsFollowerTemplate> {
         public static final int defaultSystemDiskSize = 40;
         public static final String defaultRemoteFs = "/root";
+        public static final String defaultRemoteAdmin = "root";
 
         @Override
         public String getDisplayName() {
