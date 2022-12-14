@@ -1,5 +1,8 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
 import com.alibabacloud.jenkins.ecs.client.AlibabaEcsClient;
 import com.alibabacloud.jenkins.ecs.enums.DataDiskCategory;
@@ -15,9 +18,6 @@ import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -67,7 +67,7 @@ public class AlibabaEcsFollowerTemplateTest {
         String zone = "cn-beijing-h";
         String chargeType = "PostPaid";
         String instanceType = "ecs.c6.large";
-        SystemDiskCategory systemDiskCategory = SystemDiskCategory.cloud_essd;
+        SystemDiskCategory systemDiskCategory = SystemDiskCategory.cloud_essd_PL0;
         Integer systemDiskSize = 40;
         String vsw = "vsw-1";
         int minimumNumberOfInstances = 1;
@@ -77,8 +77,12 @@ public class AlibabaEcsFollowerTemplateTest {
         String mountQuantity = "4";
         boolean mountDataDisk = true;
         WindowsData windowsData = new WindowsData("X123456x", false, "180", true, false);
-        AlibabaEcsFollowerTemplate follower = new AlibabaEcsFollowerTemplate(templateName, image, zone, vsw, chargeType, instanceType, initScript, labelString, remoteFS, systemDiskCategory, systemDiskSize, minimumNumberOfInstances,
-                idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData", windowsData, ConnectionStrategy.PUBLIC_IP, "",dataDiskSize, dataDiskCategory, mountQuantity, mountDataDisk);
+        AlibabaEcsFollowerTemplate follower = new AlibabaEcsFollowerTemplate(templateName, image, zone, vsw, chargeType,
+            instanceType, initScript, labelString, remoteFS, systemDiskCategory, systemDiskSize,
+            minimumNumberOfInstances,
+            idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData",
+            windowsData, ConnectionStrategy.PUBLIC_IP, "", dataDiskSize, dataDiskCategory, mountQuantity, mountDataDisk,
+            1, "");
         follower.setParent(alibabaCloud);
         List<String> instanceIds = follower.provisionSpot(1, true);
         Assert.assertEquals(instanceIds, instances);

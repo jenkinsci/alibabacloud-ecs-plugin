@@ -1,15 +1,5 @@
 package com.alibabacloud.jenkins.ecs;
 
-import com.alibabacloud.jenkins.ecs.util.MinimumInstanceChecker;
-import hudson.init.InitMilestone;
-import hudson.model.Descriptor;
-import hudson.model.Executor;
-import hudson.model.ExecutorListener;
-import hudson.model.Queue;
-import hudson.slaves.RetentionStrategy;
-import jenkins.model.Jenkins;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.time.Clock;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -17,9 +7,26 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.alibabacloud.jenkins.ecs.util.MinimumInstanceChecker;
+import hudson.init.InitMilestone;
+import hudson.model.AbstractBuild;
+import hudson.model.Descriptor;
+import hudson.model.Executor;
+import hudson.model.ExecutorListener;
+import hudson.model.Job;
+import hudson.model.Project;
+import hudson.model.Queue;
+import hudson.model.Run;
+import hudson.slaves.RetentionStrategy;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.workflow.support.steps.ExecutorStepExecution.PlaceholderTask;
+import org.kohsuke.stapler.DataBoundConstructor;
+
 public class AlibabaEcsRetentionStrategy extends RetentionStrategy<AlibabaEcsComputer> implements ExecutorListener {
     private static final Logger LOGGER = Logger.getLogger(AlibabaEcsRetentionStrategy.class.getName());
-    public static final boolean DISABLED = Boolean.getBoolean(AlibabaEcsRetentionStrategy.class.getName() + ".disabled");
+    public static final boolean DISABLED = Boolean.getBoolean(
+        AlibabaEcsRetentionStrategy.class.getName() + ".disabled");
     private long nextCheckAfter = -1;
     private transient Clock clock;
     private final int idleTerminationMinutes;
@@ -88,6 +95,99 @@ public class AlibabaEcsRetentionStrategy extends RetentionStrategy<AlibabaEcsCom
 
     @Override
     public void taskAccepted(Executor executor, Queue.Task task) {
+        AlibabaEcsComputer computer = (AlibabaEcsComputer)executor.getOwner();
+        if (computer == null || computer.getNode() == null) {
+            LOGGER.warning("taskAccepted but computer is null or node is null.");
+            return;
+        }
+        int maxTotalUses = 0;
+        String instanceId = "";
+        String currentBuildName = tryGetBuildName(task);
+        AlibabaEcsSpotFollower node = computer.getNode();
+        if (null != node) {
+            maxTotalUses = node.maxTotalUses;
+            instanceId = node.getEcsInstanceId();
+        }
+        if (maxTotalUses <= 0) {
+            // 不限制单个节点的复用次数
+            LOGGER.fine("maxTotalUses set to unlimited (" + node.maxTotalUses + ") for agent " + instanceId
+                + " taskDisplayName: " + task.getDisplayName()
+                + " currentBuildName: " + currentBuildName);
+
+        } else if (maxTotalUses == 1) {
+            // 单个节点只能使用一次, 用完就不再接受新的任务, 销毁;
+            // 此时可以将分配在该节点的buildName设置为instanceName, 方便用户账单统计
+            LOGGER.info("maxTotalUses drained - suspending agent " + instanceId
+                + " taskDisplayName: " + task.getDisplayName()
+                + " currentBuildName: " + currentBuildName);
+            computer.setAcceptingTasks(false);
+            String instanceName = node.instanceNamePrefix + currentBuildName;
+            computer.modifyInstanceName(instanceName);
+        } else {
+            // 单个节点只能使用N次, 每次使用完, 都递减1, 直到为1, 从而进入到 "maxTotalUses == 1" 分支
+            if (null != node) {
+                node.maxTotalUses = node.maxTotalUses - 1;
+                LOGGER.info("Agent " + node.getEcsInstanceId() + " has " + node.maxTotalUses + " builds left"
+                    + " taskDisplayName: " + task.getDisplayName()
+                    + " currentBuildName: " + currentBuildName);
+            }
+        }
+
+    }
+
+    private String tryGetBuildName(Queue.Task task) {
+        String currentBuildName = "";
+        try {
+            // 这里去尝试获取Job构建序号的名称, 例如 jenkins_test#1; 没有的话, 则fallback到使用Job名称
+            if (task instanceof Job) {
+                currentBuildName = ((Job)task).getLastBuild().toString();
+                if (StringUtils.isBlank(currentBuildName)) {
+                    currentBuildName = "";
+                }
+                LOGGER.info("taskAccepted current taskType: Job currentBuildName: " + currentBuildName);
+            } else if (task instanceof Project) {
+                AbstractBuild lastBuild = ((Project)task).getLastBuild();
+                if (null != lastBuild) {
+                    currentBuildName = lastBuild.toString();
+                    if (StringUtils.isBlank(currentBuildName)) {
+                        currentBuildName = "";
+                    }
+                }
+                LOGGER.info("taskAccepted current taskType: Project currentBuildName: " + currentBuildName);
+            } else if (task instanceof PlaceholderTask) {
+                Run<?, ?> run = ((PlaceholderTask)task).run();
+                if (null != run) {
+                    currentBuildName = run.getExternalizableId();
+                    if (StringUtils.isBlank(currentBuildName)) {
+                        currentBuildName = "";
+                    }
+                }
+                currentBuildName = StringUtils.replaceChars(currentBuildName, '/', '-');
+                LOGGER.info("taskAccepted current taskType: PlaceholderTask currentBuildName: " + currentBuildName);
+            } else {
+                String simpleName = task.getClass().getSimpleName();
+                // task.getName() 获取到的是整个Job的名称,  例如 jenkins_test
+                currentBuildName = task.getName();
+                LOGGER.warning("taskAccepted current taskType: " + simpleName + " use job name as currentBuildName: "
+                    + currentBuildName);
+            }
+            if (StringUtils.isBlank(currentBuildName)) {
+                currentBuildName = task.getName();
+            }
+        } catch (Exception e) {
+            String simpleName = task.getClass().getSimpleName();
+            if (StringUtils.isNotBlank(task.getName())) {
+                LOGGER.warning("taskAccepted current taskType: " + simpleName + " use job name as build name: "
+                    + currentBuildName);
+            } else {
+                LOGGER.warning("taskAccepted current taskType: " + simpleName + " use job name as build name is null ");
+            }
+        }
+
+        // 由于要使用 JobName#BuildId 作为ECS的实例名称, 但ECS实例名称格式有限制, 不能使用'#', 空格等特殊字符
+        currentBuildName = StringUtils.replaceChars(currentBuildName, '#', '-');
+        currentBuildName = StringUtils.remove(currentBuildName, ' ');
+        return currentBuildName;
     }
 
     @Override

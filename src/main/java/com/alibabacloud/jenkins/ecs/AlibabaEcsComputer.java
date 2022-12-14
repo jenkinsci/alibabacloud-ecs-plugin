@@ -90,4 +90,12 @@ public class AlibabaEcsComputer extends SlaveComputer {
         }
     }
 
+    public void modifyInstanceName(String currentBuildName) {
+        AlibabaEcsSpotFollower node = getNode();
+        if (null == node) {
+            log.error("modifyInstanceName skipped. node is null");
+            return;
+        }
+        node.modifyInstanceName(currentBuildName);
+    }
 }

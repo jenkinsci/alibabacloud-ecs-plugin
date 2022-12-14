@@ -1,7 +1,13 @@
 package com.alibabacloud.jenkins.ecs.enums;
 
 public enum SystemDiskCategory {
-    cloud_essd, cloud_ssd, cloud_efficiency, cloud;
+    cloud_ssd,
+    cloud_efficiency,
+    cloud,
+    cloud_essd_PL0,
+    cloud_essd_PL1,
+    cloud_essd_PL2,
+    cloud_essd_PL3;
 
     public static SystemDiskCategory fromValue(String value) {
         if (value != null && !"".equals(value)) {
