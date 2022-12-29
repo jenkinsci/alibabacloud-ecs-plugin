@@ -59,6 +59,10 @@
                     </f:repeatable>
                 </f:entry>
 
+                <f:entry title="${%Maximum Total Uses}" field="maxTotalUses">
+                    <f:textbox />
+                </f:entry>
+
                 <!-- main body of the configuration -->
                 <!-- <st:include it="${instance}" page="configure-entries.jelly" /> -->
 

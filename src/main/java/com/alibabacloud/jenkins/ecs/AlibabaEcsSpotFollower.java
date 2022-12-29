@@ -15,6 +15,7 @@ import com.alibabacloud.jenkins.ecs.win.ECSWindowsLauncher;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse.Instance;
 import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
+import com.aliyuncs.ecs.model.v20140526.ModifyInstanceAttributeRequest;
 import com.aliyuncs.exceptions.ClientException;
 import com.google.common.collect.Lists;
 import hudson.Extension;
@@ -78,10 +79,20 @@ public class AlibabaEcsSpotFollower extends Slave {
 
     private String remoteAdmin;
 
+    public int maxTotalUses;
+
+    public String instanceNamePrefix;
+
     public transient List<AlibabaEcsTag> tags = Lists.newArrayList();
     private boolean isConnected = false;
 
-    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, RetentionStrategy<AlibabaEcsComputer> retentionStrategy, String userData, EcsTypeData ecsType, String remoteAdmin) throws IOException, FormException {
+    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, ComputerLauncher launcher,
+                                  String remoteFS, @Nonnull String cloudName, String labelString, String initScript,
+                                  @Nonnull String templateName, int numExecutors, int launchTimeout,
+                                  List<AlibabaEcsTag> tags, String idleTerminationMinutes,
+                                  RetentionStrategy<AlibabaEcsComputer> retentionStrategy, String userData,
+                                  EcsTypeData ecsType, String remoteAdmin, int maxTotalUses, String instanceNamePrefix)
+            throws IOException, FormException {
         super(name, remoteFS, launcher);
         this.ecsInstanceId = ecsInstanceId;
         this.cloudName = cloudName;
@@ -93,16 +104,28 @@ public class AlibabaEcsSpotFollower extends Slave {
         this.idleTerminationMinutes = idleTerminationMinutes;
         this.ecsType = ecsType;
         this.remoteAdmin = remoteAdmin;
+        this.maxTotalUses = maxTotalUses;
+        this.instanceNamePrefix = instanceNamePrefix;
         setLabelString(labelString);
         setRetentionStrategy(retentionStrategy);
         setNumExecutors(numExecutors);
-        log.info("AlibabaEcsSpotFollower created. templateName: {} ecsInstanceId: {} numExecutors: {}", templateName, ecsInstanceId, numExecutors);
+        log.info("AlibabaEcsSpotFollower created. templateName: {} ecsInstanceId: {} numExecutors: {}", templateName,
+                ecsInstanceId, numExecutors);
         readResolve();
     }
 
     @DataBoundConstructor
-    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, String remoteFS, @Nonnull String cloudName, String labelString, String initScript, @Nonnull String templateName, int numExecutors, int launchTimeout, List<AlibabaEcsTag> tags, String idleTerminationMinutes, String userData, EcsTypeData ecsType, String remoteAdmin) throws FormException, IOException {
-        this(ecsInstanceId, name, (null != ecsType && ecsType.isWindows() ? new ECSWindowsLauncher() : new AlibabaEcsUnixComputerLauncher()) , remoteFS, cloudName, labelString, initScript, templateName, numExecutors, launchTimeout, tags, idleTerminationMinutes, new AlibabaEcsRetentionStrategy(idleTerminationMinutes), userData, ecsType, remoteAdmin);
+    public AlibabaEcsSpotFollower(@Nonnull String ecsInstanceId, @Nonnull String name, String remoteFS,
+                                  @Nonnull String cloudName, String labelString, String initScript,
+                                  @Nonnull String templateName, int numExecutors, int launchTimeout,
+                                  List<AlibabaEcsTag> tags, String idleTerminationMinutes, String userData,
+                                  EcsTypeData ecsType, String remoteAdmin, int maxTotalUses, String instanceNamePrefix)
+            throws FormException, IOException {
+        this(ecsInstanceId, name,
+            (null != ecsType && ecsType.isWindows() ? new ECSWindowsLauncher() : new AlibabaEcsUnixComputerLauncher()),
+            remoteFS, cloudName, labelString, initScript, templateName, numExecutors, launchTimeout, tags,
+            idleTerminationMinutes, new AlibabaEcsRetentionStrategy(idleTerminationMinutes), userData, ecsType,
+            remoteAdmin, maxTotalUses, instanceNamePrefix);
     }
 
     @Override
@@ -110,6 +133,20 @@ public class AlibabaEcsSpotFollower extends Slave {
         log.info("readResolve invoked");
         if (ecsInstanceId == null) {
             ecsInstanceId = getNodeName();
+        }
+        if (maxTotalUses == 0) {
+            AlibabaCloud cloud = getCloud();
+            if (cloud != null) {
+                AlibabaEcsFollowerTemplate template = cloud.getTemplate(templateName);
+                if (template != null) {
+                    if (template.getMaxTotalUses() == -1) {
+                        maxTotalUses = -1;
+                    }
+                }
+            }
+        }
+        if (StringUtils.isBlank(instanceNamePrefix)) {
+            instanceNamePrefix = "ECS-";
         }
         return this;
     }
@@ -153,7 +190,7 @@ public class AlibabaEcsSpotFollower extends Slave {
             log.error("fetchLiveInstanceData error while get " + getEcsInstanceId(), e);
             return;
         }
-        if (null != i){
+        if (null != i) {
             createdTime = DateUtils.parse(i.getCreationTime()).getTime();
         }
 
@@ -220,6 +257,24 @@ public class AlibabaEcsSpotFollower extends Slave {
             log.error("describeNode error. nodeId: " + ecsInstanceId, e);
         }
         return null;
+    }
+
+    public boolean modifyInstanceName(String instanceName) {
+        try {
+            if (StringUtils.isBlank(instanceName)) {
+                log.warn("modifyInstanceName skipped. instanceName is empty");
+                return false;
+            }
+            // instanceName不能随意设置, 只能包含数字、半角冒号（:）、下划线（_）或者短划线（-）。参见: https://next.api.aliyun.com/document/Ecs/2014-05-26/ModifyInstanceAttribute
+            AlibabaEcsClient connect = getCloud().connect();
+            ModifyInstanceAttributeRequest request = new ModifyInstanceAttributeRequest();
+            request.setInstanceId(ecsInstanceId);
+            request.setInstanceName(instanceName);
+            return connect.modifyInstanceAttr(request);
+        } catch (Exception e) {
+            log.error("modifyInstanceName error. nodeId: " + ecsInstanceId, e);
+        }
+        return false;
     }
 
     public String getKeyPairName() {
@@ -300,6 +355,10 @@ public class AlibabaEcsSpotFollower extends Slave {
         return instanceType;
     }
 
+    //public int getMaxTotalUses() {
+    //    return maxTotalUses;
+    //}
+
     public String getEcsInstanceId() {
         return ecsInstanceId;
     }
@@ -315,6 +374,7 @@ public class AlibabaEcsSpotFollower extends Slave {
     public String getInitScript() {
         return initScript;
     }
+
     public String getUserData() {
         return userData;
     }
@@ -430,6 +490,7 @@ public class AlibabaEcsSpotFollower extends Slave {
         return b;
     }
 
+
     void idleTimeout() {
         log.info("ECS instance idle time expired: " + getEcsInstanceId());
         terminate();
@@ -444,9 +505,9 @@ public class AlibabaEcsSpotFollower extends Slave {
         Computer.threadPoolForRemoting.submit(() -> {
             try {
                 // String currStatus = gracefulTerminate();
+                Jenkins.getInstanceOrNull().removeNode(this);
                 String currStatus = forceTerminate();
                 if ("UNKNOWN".equals(currStatus)) {
-                    Jenkins.getInstanceOrNull().removeNode(this);
                     log.info("delete node: {} success.", getNodeName());
                 } else {
                     log.info("delete node: {} failed. status: {}", getNodeName(), status);

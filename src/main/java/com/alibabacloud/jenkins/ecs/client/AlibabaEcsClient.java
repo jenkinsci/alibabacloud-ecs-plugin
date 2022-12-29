@@ -1,7 +1,6 @@
 package com.alibabacloud.jenkins.ecs.client;
 
 import com.alibaba.fastjson.JSON;
-import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials;
 import com.alibabacloud.credentials.plugin.auth.AlibabaSessionTokenCredentials;
 import com.alibabacloud.credentials.plugin.util.CredentialsHelper;
 import com.alibabacloud.jenkins.ecs.Messages;
@@ -452,6 +451,22 @@ public class AlibabaEcsClient {
             log.error("runInstances error. request: {}", JSON.toJSONString(request), e);
         }
         return Lists.newArrayList();
+    }
+
+    public boolean modifyInstanceAttr(ModifyInstanceAttributeRequest request) {
+        try {
+            if(StringUtils.isBlank(request.getInstanceId())) {
+                log.error("modifyInstanceAttr param error. instanceId is required.");
+                return false;
+            }
+            log.info("modifyInstanceAttr start. request: {}", JSON.toJSONString(request));
+            request.setAcceptFormat(FormatType.JSON);
+            ModifyInstanceAttributeResponse acsResponse = client.getAcsResponse(request);
+            log.info("modifyInstanceAttr finished. request: {} requestId: {}", JSON.toJSONString(request), acsResponse.getRequestId());
+        } catch (Exception e) {
+            log.error("modifyInstanceAttr error. request: {}", JSON.toJSONString(request), e);
+        }
+        return false;
     }
 
     public FormValidation druRunInstances(RunInstancesRequest request) {

@@ -134,6 +134,8 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public String remoteAdmin;
     public ConnectionStrategy connectionStrategy;
     public EcsTypeData ecsType;
+    public int maxTotalUses;
+    public String instanceNamePrefix;
 
     private transient AlibabaCloud parent;
     private transient Set<LabelAtom> labelSet;
@@ -142,10 +144,18 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public static final String ON_DEMAND_INSTANCE_CHARGE_TYPE = "OnDemand";
     public static final Integer DEFAULT_NUM_OF_EXECUTORS = 4;
     public static final Integer DEFAULT_REMOVE_CLOUD_DISK_COUNT = 1;
+    public static final String INSTANCE_NAME_PREFIX = "ECS-";
 
     @DataBoundConstructor
-    public AlibabaEcsFollowerTemplate(String templateName, String image, String zone, String vsw, String chargeType, String instanceType, String initScript, String labelString, String remoteFs, SystemDiskCategory systemDiskCategory, Integer systemDiskSize, int minimumNumberOfInstances, String idleTerminationMinutes,
-                                      String instanceCapStr, String numExecutors, String launchTimeoutStr, List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType, ConnectionStrategy connectionStrategy, String remoteAdmin, String dataDiskSize, DataDiskCategory dataDiskCategory, String mountQuantity, boolean mountDataDisk) {
+    public AlibabaEcsFollowerTemplate(String templateName, String image, String zone, String vsw, String chargeType,
+                                      String instanceType, String initScript, String labelString, String remoteFs,
+                                      SystemDiskCategory systemDiskCategory, Integer systemDiskSize,
+                                      int minimumNumberOfInstances, String idleTerminationMinutes,
+                                      String instanceCapStr, String numExecutors, String launchTimeoutStr,
+                                      List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType,
+                                      ConnectionStrategy connectionStrategy, String remoteAdmin, String dataDiskSize,
+                                      DataDiskCategory dataDiskCategory, String mountQuantity, boolean mountDataDisk,
+                                      int maxTotalUses, String instanceNamePrefix) {
         this.templateName = templateName;
         this.image = image;
         this.zone = zone;
@@ -162,8 +172,15 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.dataDiskCategory = dataDiskCategory;
         this.mountQuantity = mountQuantity;
         this.mountDataDisk = mountDataDisk;
-        this.ecsType= ecsType;
+        this.ecsType = ecsType;
         this.remoteAdmin = remoteAdmin;
+        this.maxTotalUses = maxTotalUses;
+        if (StringUtils.isBlank(instanceNamePrefix)) {
+            this.instanceNamePrefix = INSTANCE_NAME_PREFIX;
+        } else {
+            this.instanceNamePrefix = instanceNamePrefix;
+        }
+        this.instanceNamePrefix = instanceNamePrefix;
         this.connectionStrategy = connectionStrategy == null ? ConnectionStrategy.PRIVATE_IP : connectionStrategy;
         if (CollectionUtils.isEmpty(tags)) {
             this.tags = Lists.newArrayList();
@@ -221,6 +238,17 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return mountDataDisk;
     }
 
+    public int getMaxTotalUses() {
+        return maxTotalUses;
+    }
+
+    public String getInstanceNamePrefix() {
+        if (StringUtils.isBlank(instanceNamePrefix)) {
+            return INSTANCE_NAME_PREFIX;
+        }
+        return instanceNamePrefix;
+    }
+
     public String getLaunchTimeoutStr() {
         if (launchTimeout == Integer.MAX_VALUE) {
             return "";
@@ -248,6 +276,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     protected Object readResolve() {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         labelSet = Label.parse(labels);
+        if (maxTotalUses == 0) {
+            maxTotalUses = -1;
+        }
         return this;
     }
 
@@ -355,7 +386,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         List<AlibabaEcsSpotFollower> list = Lists.newArrayList();
         List<String> instanceIds = provisionSpot(amount, attachPublicIp);
         for (String instanceId : instanceIds) {
-            AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId, templateName + "-" + instanceId, remoteFs, parent.getCloudName(), labels, initScript, getTemplateName(), getNumExecutors(), getLaunchTimeout(), getTags(), getIdleTerminationMinutes(), userData, ecsType, remoteAdmin);
+            AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId,
+                templateName + "-" + instanceId, remoteFs, parent.getCloudName(), labels, initScript, getTemplateName(),
+                getNumExecutors(), getLaunchTimeout(), getTags(), getIdleTerminationMinutes(), userData, ecsType,
+                remoteAdmin, maxTotalUses, instanceNamePrefix);
             list.add(alibabaEcsSpotFollower);
         }
         return list;
@@ -392,7 +426,15 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         request.setKeyPairName(keyPairName);
         request.setInstanceType(instanceType);
         if (null != systemDiskCategory) {
-            request.setSystemDiskCategory(systemDiskCategory.name());
+            String name = systemDiskCategory.name();
+            String[] s = StringUtils.split(name, "_");
+            if (3 == s.length) {
+                request.setSystemDiskPerformanceLevel(s[2]);
+                String category = String.join("_", s[0], s[1]);
+                request.setSystemDiskCategory(category);
+            } else {
+                request.setSystemDiskCategory(name);
+            }
         }
         if (null != systemDiskSize) {
             request.setSystemDiskSize(systemDiskSize.toString());
@@ -433,7 +475,15 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         }
         for (int i = 0; i < dNums; i++) {
             RunInstancesRequest.DataDisk dataDisk = new RunInstancesRequest.DataDisk();
-            dataDisk.setCategory(dataDiskCategory.name());
+            String name = dataDiskCategory.name();
+            String[] s = StringUtils.split(name, "_");
+            if (3 == s.length) {
+                dataDisk.setPerformanceLevel(s[2]);
+                String category = String.join("_", s[0], s[1]);
+                dataDisk.setCategory(category);
+            } else {
+                dataDisk.setCategory(name);
+            }
             dataDisk.setSize(dSize);
             dataDisks.add(dataDisk);
         }
@@ -574,7 +624,8 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         @RequirePOST
         public ListBoxModel doFillSystemDiskCategoryItems() {
             ListBoxModel model = new ListBoxModel();
-            List<String> systemDiskCategorys = Lists.newArrayList("cloud_essd", "cloud_ssd", "cloud_efficiency", "cloud");
+            List<String> systemDiskCategorys = Lists.newArrayList("cloud_essd_PL0", "cloud_essd_PL1", "cloud_essd_PL2",
+                "cloud_essd_PL3", "cloud_ssd", "cloud_efficiency", "cloud");
             for (String systemDiskCategory : systemDiskCategorys) {
                 model.add(systemDiskCategory, systemDiskCategory);
             }
@@ -715,7 +766,15 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             runInstancesRequest.setInstanceType(instanceType);
             // dry run only support 1
             runInstancesRequest.setMinAmount(1);
-            runInstancesRequest.setSystemDiskCategory(systemDiskCategory);
+
+            String[] s = StringUtils.split(systemDiskCategory, "_");
+            if (3 == s.length) {
+                runInstancesRequest.setSystemDiskPerformanceLevel(s[2]);
+                String category = String.join("_", s[0], s[1]);
+                runInstancesRequest.setSystemDiskCategory(category);
+            } else {
+                runInstancesRequest.setSystemDiskCategory(systemDiskCategory);
+            }
             runInstancesRequest.setSystemDiskSize(systemDiskSize);
             if (attachPublicIp) {
                 runInstancesRequest.setInternetMaxBandwidthOut(10);

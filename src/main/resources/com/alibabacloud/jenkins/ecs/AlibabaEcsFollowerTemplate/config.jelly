@@ -88,6 +88,12 @@
             <f:entry title="${%User Data}" field="userData">
                 <f:textarea/>
             </f:entry>
+            <f:entry title="${%Maximum_Total_Uses}" field="maxTotalUses">
+                <f:textbox />
+            </f:entry>
+            <f:entry title="${%Instance_Name_Prefix}" field="instanceNamePrefix">
+                            <f:textbox />
+                        </f:entry>
         </f:advanced>
         <f:validateButton title="${%TestCreateEcs}" progress="${%Testing...}" method="dryRunInstance"
                           with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,amiType,password, mountDataDisk,dataDiskCategory,dataDiskSize,mountQuantity"/>
