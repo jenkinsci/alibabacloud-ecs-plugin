@@ -38,16 +38,9 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
             LogHelper.error(log, listener, "node is null", null);
             throw new IllegalStateException("node is null");
         }
-        String hostIp = node.getPublicIp();
         String remoteFs = node.getRemoteFS();
         String initScript = node.getInitScript();
         PrintStream remoteLogger = listener.getLogger();
-        if (StringUtils.isBlank(hostIp)) {
-            // 优先使用公网IP, 没有的话, 则降级到内网IP.
-            hostIp = node.getPrivateIp();
-            LogHelper.warn(log, listener,
-                    "launchScript using privateIp " + hostIp + " publicIp is null. instanceId: " + node.getEcsInstanceId(), null);
-        }
         Connection conn = null;
         try {
             // 1. ssh connect to follower
@@ -77,6 +70,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
 
             // 4. 启动follower的jenkins进程
             String workDir = StringUtils.isNotBlank(remoteFs) ? remoteFs : tmpDir;
+            String hostIp = getHostIp(node, listener);
             String launchString
                 = "java -jar " + tmpDir + "/remoting.jar -workDir " + workDir + " -jar-cache "
                 + workDir + "/remoting/jarCache";
@@ -272,11 +266,40 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
         return -1;
     }
 
+    private String getHostIp(AlibabaEcsSpotFollower node, TaskListener listener) {
+        String hostIp = null;
+        for (int i = 0; i < 5; i++) {
+            hostIp = node.getPublicIp();
+            if (StringUtils.isBlank(hostIp)) {
+                // 优先使用公网IP, 没有的话, 则降级到内网IP.
+                hostIp = node.getPrivateIp();
+
+                LogHelper.warn(log, listener,
+                    "launchScript using privateIp " + hostIp + " publicIp is null. instanceId: " + node
+                        .getEcsInstanceId(), null);
+            }
+            if (StringUtils.isNotBlank(hostIp)) {
+                break;
+
+            }
+            LogHelper.warn(log, listener,
+                "privateIp is null. publicIp is null. instanceId: " + node
+                    .getEcsInstanceId(), null);
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {
+                LogHelper.error(log, listener, "getHostIp error instanceId: " + node.getEcsInstanceId(), e);
+            }
+        }
+        return hostIp;
+    }
+
     private void installJdk(AlibabaEcsSpotFollower node, AlibabaEcsComputer computer, Connection conn,
-                   PrintStream remoteLogger, TaskListener listener) throws IOException, InterruptedException {
+                            PrintStream remoteLogger, TaskListener listener) throws IOException, InterruptedException {
         int i = -1;
         VersionNumber version = Jenkins.getVersion();
-        if (null != version && null !=  node.lastFetchInstance && StringUtils.isNotBlank(node.lastFetchInstance.getOSName())){
+        if (null != version && null != node.lastFetchInstance && StringUtils.isNotBlank(
+            node.lastFetchInstance.getOSName())) {
             VersionNumber versionNumber = new VersionNumber("2.303.1");
             i = version.compareTo(versionNumber);
             String osName = node.lastFetchInstance.getOSName();

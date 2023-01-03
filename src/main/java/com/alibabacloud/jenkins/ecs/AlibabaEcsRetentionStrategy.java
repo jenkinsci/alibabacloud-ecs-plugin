@@ -121,7 +121,12 @@ public class AlibabaEcsRetentionStrategy extends RetentionStrategy<AlibabaEcsCom
                 + " taskDisplayName: " + task.getDisplayName()
                 + " currentBuildName: " + currentBuildName);
             computer.setAcceptingTasks(false);
-            String instanceName = node.instanceNamePrefix + currentBuildName;
+            String instanceName;
+            if (StringUtils.isBlank(node.getNodeName())) {
+                instanceName = node.instanceNamePrefix + currentBuildName;
+            } else {
+                instanceName = node.getNodeName();
+            }
             computer.modifyInstanceName(instanceName);
         } else {
             // 单个节点只能使用N次, 每次使用完, 都递减1, 直到为1, 从而进入到 "maxTotalUses == 1" 分支

@@ -1,5 +1,6 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -54,7 +55,9 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * Created by kunlun.ykl on 2020/8/25.
  */
 @Slf4j
-public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowerTemplate> {
+public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowerTemplate>, Serializable {
+
+    private static final long serialVersionUID = -6139090518333729443L;
 
     private final String templateName;
 
@@ -137,6 +140,8 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public int maxTotalUses;
     public String instanceNamePrefix;
 
+    public String name;
+
     private transient AlibabaCloud parent;
     private transient Set<LabelAtom> labelSet;
     public static final String SPOT_INSTANCE_CHARGE_TYPE = "Spot";
@@ -155,7 +160,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
                                       List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType,
                                       ConnectionStrategy connectionStrategy, String remoteAdmin, String dataDiskSize,
                                       DataDiskCategory dataDiskCategory, String mountQuantity, boolean mountDataDisk,
-                                      int maxTotalUses, String instanceNamePrefix) {
+                                      int maxTotalUses, String instanceNamePrefix, String name) {
         this.templateName = templateName;
         this.image = image;
         this.zone = zone;
@@ -180,7 +185,6 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         } else {
             this.instanceNamePrefix = instanceNamePrefix;
         }
-        this.instanceNamePrefix = instanceNamePrefix;
         this.connectionStrategy = connectionStrategy == null ? ConnectionStrategy.PRIVATE_IP : connectionStrategy;
         if (CollectionUtils.isEmpty(tags)) {
             this.tags = Lists.newArrayList();
@@ -209,6 +213,9 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             this.launchTimeout = Integer.MAX_VALUE;
         } else {
             this.launchTimeout = Integer.parseInt(launchTimeoutStr);
+        }
+        if (StringUtils.isNotBlank(name)) {
+            this.name = name;
         }
 
     }
@@ -386,8 +393,11 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         List<AlibabaEcsSpotFollower> list = Lists.newArrayList();
         List<String> instanceIds = provisionSpot(amount, attachPublicIp);
         for (String instanceId : instanceIds) {
+            if (StringUtils.isBlank(name)) {
+                name = templateName + "-" + instanceId;
+            }
             AlibabaEcsSpotFollower alibabaEcsSpotFollower = new AlibabaEcsSpotFollower(instanceId,
-                templateName + "-" + instanceId, remoteFs, parent.getCloudName(), labels, initScript, getTemplateName(),
+                name, remoteFs, parent.getCloudName(), labels, initScript, getTemplateName(),
                 getNumExecutors(), getLaunchTimeout(), getTags(), getIdleTerminationMinutes(), userData, ecsType,
                 remoteAdmin, maxTotalUses, instanceNamePrefix);
             list.add(alibabaEcsSpotFollower);
