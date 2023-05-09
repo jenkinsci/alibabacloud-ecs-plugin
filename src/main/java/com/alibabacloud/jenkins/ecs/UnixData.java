@@ -1,12 +1,14 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import hudson.Extension;
 import hudson.model.Descriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-public class UnixData extends EcsTypeData {
+public class UnixData extends EcsTypeData implements Serializable {
+
     @DataBoundConstructor
     public UnixData() {}
 

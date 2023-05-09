@@ -1,5 +1,16 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.annotation.CheckForNull;
+
 import com.alibabacloud.credentials.plugin.auth.AlibabaCredentials;
 import com.alibabacloud.credentials.plugin.auth.AlibabaKeyPairUtils;
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
@@ -22,7 +33,11 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.google.common.collect.Lists;
 import hudson.Extension;
-import hudson.model.*;
+import hudson.model.Descriptor;
+import hudson.model.Failure;
+import hudson.model.ItemGroup;
+import hudson.model.Label;
+import hudson.model.PeriodicWork;
 import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.slaves.Cloud;
@@ -40,16 +55,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
-
-import javax.annotation.CheckForNull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static hudson.security.Permission.CREATE;
 import static hudson.security.Permission.UPDATE;
@@ -613,6 +618,11 @@ public class AlibabaCloud extends Cloud {
         return matchingTemplates;
     }
 
+    public Collection<AlibabaEcsFollowerTemplate> setTemplates(AlibabaEcsFollowerTemplate template) {
+        templates.add(template);
+        readResolve();
+        return templates;
+    }
 
     @Extension
     public static class AlibabaEcsConnectionUpdater extends PeriodicWork {

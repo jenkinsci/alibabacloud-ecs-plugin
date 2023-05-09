@@ -1,5 +1,6 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -11,7 +12,7 @@ import hudson.model.Descriptor;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-public class AlibabaEcsTag extends AbstractDescribableImpl<AlibabaEcsTag> {
+public class AlibabaEcsTag extends AbstractDescribableImpl<AlibabaEcsTag> implements Serializable {
     private final String name;
     private final String value;
 
