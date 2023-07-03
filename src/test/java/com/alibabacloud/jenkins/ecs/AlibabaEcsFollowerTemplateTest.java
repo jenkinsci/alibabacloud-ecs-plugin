@@ -82,7 +82,8 @@ public class AlibabaEcsFollowerTemplateTest {
             minimumNumberOfInstances,
             idleTerminationMinutes, instanceCapStr, numExecutors + "", launchTimeout + "", tags, "userData",
             windowsData, ConnectionStrategy.PUBLIC_IP, "", dataDiskSize, dataDiskCategory, mountQuantity, mountDataDisk,
-            1, "");
+            false,
+            1, "", "");
         follower.setParent(alibabaCloud);
         List<String> instanceIds = follower.provisionSpot(1, true);
         Assert.assertEquals(instanceIds, instances);

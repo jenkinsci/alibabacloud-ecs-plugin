@@ -109,6 +109,13 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
      */
     private final boolean mountDataDisk;
 
+    private final boolean newDataDisk;
+
+    /**
+     * 数据盘Id
+     */
+    private final String dataDiskId;
+
     /**
      * 实例付费类型
      */
@@ -137,6 +144,7 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
     public int maxTotalUses;
     public String instanceNamePrefix;
 
+
     private transient AlibabaCloud parent;
     private transient Set<LabelAtom> labelSet;
     public static final String SPOT_INSTANCE_CHARGE_TYPE = "Spot";
@@ -155,7 +163,8 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
                                       List<AlibabaEcsTag> tags, String userData, EcsTypeData ecsType,
                                       ConnectionStrategy connectionStrategy, String remoteAdmin, String dataDiskSize,
                                       DataDiskCategory dataDiskCategory, String mountQuantity, boolean mountDataDisk,
-                                      int maxTotalUses, String instanceNamePrefix) {
+                                      boolean newDataDisk,
+                                      int maxTotalUses, String instanceNamePrefix, String dataDiskId) {
         this.templateName = templateName;
         this.image = image;
         this.zone = zone;
@@ -172,9 +181,11 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         this.dataDiskCategory = dataDiskCategory;
         this.mountQuantity = mountQuantity;
         this.mountDataDisk = mountDataDisk;
+        this.newDataDisk = newDataDisk;
         this.ecsType = ecsType;
         this.remoteAdmin = remoteAdmin;
         this.maxTotalUses = maxTotalUses;
+        this.dataDiskId = dataDiskId;
         if (StringUtils.isBlank(instanceNamePrefix)) {
             this.instanceNamePrefix = INSTANCE_NAME_PREFIX;
         } else {
@@ -236,6 +247,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
 
     public boolean isMountDataDisk() {
         return mountDataDisk;
+    }
+
+    public boolean isNewDataDisk() {
+        return newDataDisk;
     }
 
     public int getMaxTotalUses() {
@@ -378,6 +393,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         return ecsType;
     }
 
+    public String getDataDiskId() {
+        return dataDiskId;
+    }
+
     public void setEcsTypeData(EcsTypeData ecsType) {
         this.ecsType = ecsType;
     }
@@ -440,8 +459,11 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             request.setSystemDiskSize(systemDiskSize.toString());
         }
         if (isMountDataDisk()) {
-            List<RunInstancesRequest.DataDisk> dataDisks = getDataDisks(getDataDiskSize(), getDataDiskCategory(), getMountQuantity());
-            request.setDataDisks(dataDisks);
+            if (isNewDataDisk()) {
+                List<RunInstancesRequest.DataDisk> dataDisks = getDataDisks(getDataDiskSize(), getDataDiskCategory(),
+                    getMountQuantity());
+                request.setDataDisks(dataDisks);
+            }
         }
         if (BooleanUtils.isTrue(attachPublicIp)) {
             request.setInternetMaxBandwidthIn(10);
@@ -457,9 +479,28 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
             request.setSpotStrategy("SpotAsPriceGo");
         }
         List<String> instanceIdSets = connect.runInstances(request);
+        //挂载数据盘
+        if (StringUtils.isNotBlank(dataDiskId)) {
+            Boolean status = false;
+            for (String instanceId : instanceIdSets) {
+                for (int i = 0; i < 6; i++) {
+                    //查询实例状态需要running才挂载
+                    status = connect.describeInstanceStatus(instanceId);
+                    if (!status) {
+                        Thread.sleep(10000L);
+                    }
+                }
+                if (status) {
+                    connect.attachDisk(instanceId, dataDiskId);
+                } else {
+                    log.error("挂载数据盘失败");
+                }
+            }
+        }
         if (CollectionUtils.isEmpty(instanceIdSets) || StringUtils.isBlank(instanceIdSets.get(0))) {
             throw new AlibabaEcsException("provision error");
         }
+
         return instanceIdSets;
     }
 
@@ -624,8 +665,10 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         @RequirePOST
         public ListBoxModel doFillSystemDiskCategoryItems() {
             ListBoxModel model = new ListBoxModel();
-            List<String> systemDiskCategorys = Lists.newArrayList("cloud_essd_PL0", "cloud_essd_PL1", "cloud_essd_PL2",
+            List<String> systemDiskCategorys = Lists.newArrayList("T", "cloud_essd_PL0", "cloud_essd_PL1",
+                "cloud_essd_PL2",
                 "cloud_essd_PL3", "cloud_ssd", "cloud_efficiency", "cloud");
+            log.info("doFillSystemDiskCategoryItems start");
             for (String systemDiskCategory : systemDiskCategorys) {
                 model.add(systemDiskCategory, systemDiskCategory);
             }
@@ -736,10 +779,47 @@ public class AlibabaEcsFollowerTemplate implements Describable<AlibabaEcsFollowe
         }
 
         @RequirePOST
+        public ComboBoxModel doFillDataDiskIdItems(@RelativePath("..") @QueryParameter String credentialsId,
+                                                   @RelativePath("..") @QueryParameter String region,
+                                                   @RelativePath("..") @QueryParameter Boolean intranetMaster,
+                                                   @QueryParameter String zone) {
+            Jenkins.get().checkPermission(Permission.CREATE);
+            Jenkins.get().checkPermission(Permission.UPDATE);
+            ComboBoxModel model = new ComboBoxModel();
+            if (StringUtils.isBlank(credentialsId) || StringUtils.isBlank(region) || StringUtils.isBlank(zone)) {
+                return model;
+            }
+            AlibabaCredentials credentials = CredentialsHelper.getCredentials(credentialsId);
+            if (credentials == null) {
+                log.error("doFillInstanceTypeItems error. credentials not found. region: {} credentialsId: {}", region,
+                    credentialsId);
+                return model;
+            }
+            AlibabaEcsClient client = new AlibabaEcsClient(credentials, region, intranetMaster);
+            List<String> diskIds = client.describeDisk(region, zone);
+            for (String diskId : diskIds) {
+                model.add(diskId);
+            }
+            return model;
+        }
 
-        public FormValidation doDryRunInstance(@RelativePath("..") @QueryParameter String credentialsId, @RelativePath("..") @QueryParameter Boolean intranetMaster, @RelativePath("..") @QueryParameter String region, @RelativePath("..") @QueryParameter String securityGroup, @RelativePath("..") @QueryParameter Boolean attachPublicIp, @QueryParameter String image, @QueryParameter String zone,
-                                               @QueryParameter String vsw, @QueryParameter String instanceType, @QueryParameter String systemDiskCategory, @QueryParameter String systemDiskSize, @QueryParameter String chargeType, @QueryParameter String password,   @QueryParameter boolean mountDataDisk, @QueryParameter String dataDiskSize, @QueryParameter DataDiskCategory dataDiskCategory, @QueryParameter String mountQuantity) {
-            log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}", credentialsId, intranetMaster, region);
+        @RequirePOST
+
+        public FormValidation doDryRunInstance(@RelativePath("..") @QueryParameter String credentialsId,
+                                               @RelativePath("..") @QueryParameter Boolean intranetMaster,
+                                               @RelativePath("..") @QueryParameter String region,
+                                               @RelativePath("..") @QueryParameter String securityGroup,
+                                               @RelativePath("..") @QueryParameter Boolean attachPublicIp,
+                                               @QueryParameter String image, @QueryParameter String zone,
+                                               @QueryParameter String vsw, @QueryParameter String instanceType,
+                                               @QueryParameter String systemDiskCategory,
+                                               @QueryParameter String systemDiskSize, @QueryParameter String chargeType,
+                                               @QueryParameter String password, @QueryParameter boolean mountDataDisk,
+                                               @QueryParameter String dataDiskSize,
+                                               @QueryParameter DataDiskCategory dataDiskCategory,
+                                               @QueryParameter String mountQuantity) {
+            log.info("doDryRunInstance info param credentialsId：{},  intranetMaster：{}, region：{}", credentialsId,
+                intranetMaster, region);
             if (StringUtils.isBlank(credentialsId)) {
                 return FormValidation.error(Messages.AlibabaECSCloud_NotSpecifiedCredentials());
             }

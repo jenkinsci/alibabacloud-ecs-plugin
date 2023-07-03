@@ -41,14 +41,20 @@
         </f:entry>
         <f:optionalBlock title="${%MountDataDisk}" field="mountDataDisk" checked="${instance.isMountDataDisk()}"
                          inline="true">
-            <f:entry title="${%DataDiskCategory}" field="dataDiskCategory">
-                <f:enum>${it.name()}</f:enum>
-            </f:entry>
-            <f:entry title="${%DataDiskSize}" field="dataDiskSize">
-                <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
-            </f:entry>
-            <f:entry title="${%MountQuantity}" field="mountQuantity">
-                <f:textbox/>
+            <f:optionalBlock title="${%newDataDisk}" field="newDataDisk" checked="${instance.isNewDataDisk()}"
+                             inline="true">
+                <f:entry title="${%DataDiskCategory}" field="dataDiskCategory">
+                    <f:enum>${it.name()}</f:enum>
+                </f:entry>
+                <f:entry title="${%DataDiskSize}" field="dataDiskSize">
+                    <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
+                </f:entry>
+                <f:entry title="${%MountQuantity}" field="mountQuantity">
+                    <f:textbox/>
+                </f:entry>
+             </f:optionalBlock>
+            <f:entry title="${%DiskId}" field="dataDiskId">
+               <f:combobox/>
             </f:entry>
         </f:optionalBlock>
         <f:dropdownDescriptorSelector title="${%ECS_Type}" field="ecsType" descriptors="${descriptor.getEcsTypeDescriptors()}" />
