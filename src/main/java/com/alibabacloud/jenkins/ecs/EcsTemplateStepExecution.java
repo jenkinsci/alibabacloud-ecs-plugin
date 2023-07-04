@@ -38,7 +38,7 @@ public class EcsTemplateStepExecution extends AbstractStepExecutionImpl implemen
     public boolean start() throws Exception {
         SystemDiskCategory systemDiskCategory = SystemDiskCategory.fromValue(step.getSystemDiskCategory());
         DataDiskCategory dataDiskCategory;
-        if (StringUtils.isNotBlank(step.getDataDiskCategory())) {
+        if (StringUtils.isNotBlank(step.getDataDiskCategory()) && step.isNewDataDisk()) {
             dataDiskCategory = DataDiskCategory.fromValue(step.getDataDiskCategory());
         } else {
             dataDiskCategory = null;
@@ -59,6 +59,12 @@ public class EcsTemplateStepExecution extends AbstractStepExecutionImpl implemen
         } else {
             templateName = step.getTemplateName();
         }
+        String dataDiskSize = null;
+        String mountQuantity = null;
+        if (step.isNewDataDisk()) {
+            dataDiskSize = step.getDataDiskSize();
+            mountQuantity = step.getMountQuantity();
+        }
 
         AlibabaEcsFollowerTemplate template = new AlibabaEcsFollowerTemplate(templateName, step.getImage(),
             step.getZone(), step.getVsw(), step.getChargeType(), step.getInstanceType(), step.getInitScript(), label,
@@ -66,12 +72,17 @@ public class EcsTemplateStepExecution extends AbstractStepExecutionImpl implemen
             Integer.parseInt(step.getMinimumNumberOfInstances()),
             step.getIdleTerminationMinutes(), step.getInstanceCap(), step.getNumExecutors(), step.getLaunchTimeout(),
             step.getTags(), step.getUserData(), step.getEcsType(), step.getConnectionStrategy(), step.getRemoteAdmin(),
-            step.getDataDiskSize(), dataDiskCategory, step.getMountQuantity(), step.isMountDataDisk(),
-            Integer.parseInt(maxTotalUses), null, step.getName());
+            dataDiskSize, dataDiskCategory, mountQuantity, step.getSnapshotId(), step.isMountDataDisk(),
+            step.isNewDataDisk(),
+            step.getDataDiskId(), Integer.parseInt(maxTotalUses), null, step.getName());
 
         List<AlibabaEcsFollowerTemplate> templates = Lists.newArrayList(template);
 
         Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            log.info("EcsTemplateStepExecution start error. jenkins is null");
+            return false;
+        }
         AlibabaCloud alibabaCloud = null;
         String cloudName = null;
         //不指定cloudName，sshKey，credentialsId 在现有的cloud的新建template
@@ -140,10 +151,7 @@ public class EcsTemplateStepExecution extends AbstractStepExecutionImpl implemen
             CloudList clouds = jenkins.clouds;
             for (Cloud cloud : clouds) {
                 if (cloud instanceof AlibabaCloud) {
-                    if (StringUtils.equals(((AlibabaCloud)cloud).getCloudName(), ecsTemplate.getCloudName())
-                        && addCloud) {
-                        clouds.remove(cloud);
-                    } else {
+                    if (StringUtils.equals(((AlibabaCloud)cloud).getCloudName(), ecsTemplate.getCloudName())) {
                         ((AlibabaCloud)cloud).getTemplates().remove(template);
                         jenkins.save();
                     }
@@ -152,5 +160,4 @@ public class EcsTemplateStepExecution extends AbstractStepExecutionImpl implemen
         }
 
     }
-
 }

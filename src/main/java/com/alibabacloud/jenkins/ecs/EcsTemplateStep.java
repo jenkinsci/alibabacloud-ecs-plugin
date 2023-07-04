@@ -142,6 +142,18 @@ public class EcsTemplateStep extends Step implements Serializable {
 
     public String name;
 
+    private boolean newDataDisk;
+
+    /**
+     * 数据盘Id
+     */
+    private String dataDiskId;
+
+    /**
+     * 快照id
+     */
+    private String snapshotId;
+
     public static long getSerialVersionUID() {
         return serialVersionUID;
     }
@@ -486,6 +498,33 @@ public class EcsTemplateStep extends Step implements Serializable {
     @DataBoundSetter
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isNewDataDisk() {
+        return newDataDisk;
+    }
+
+    @DataBoundSetter
+    public void setNewDataDisk(boolean newDataDisk) {
+        this.newDataDisk = newDataDisk;
+    }
+
+    public String getDataDiskId() {
+        return dataDiskId;
+    }
+
+    @DataBoundSetter
+    public void setDataDiskId(String dataDiskId) {
+        this.dataDiskId = dataDiskId;
+    }
+
+    public String getSnapshotId() {
+        return snapshotId;
+    }
+
+    @DataBoundSetter
+    public void setSnapshotId(String snapshotId) {
+        this.snapshotId = snapshotId;
     }
 
     @DataBoundConstructor

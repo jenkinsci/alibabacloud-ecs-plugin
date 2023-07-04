@@ -1,8 +1,10 @@
 package com.alibabacloud.jenkins.ecs;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse;
+import com.google.common.collect.Lists;
 import hudson.slaves.SlaveComputer;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,5 +50,13 @@ public class AlibabaEcsComputerTest {
         AlibabaEcsComputer computer = new AlibabaEcsComputer(follower);
         assertEquals("ecs.c5.large", computer.getEcsType());
         assertEquals("i-xxx", computer.getInstanceId());
+    }
+
+    @Test
+    public void test() {
+        List<Object> objects = Lists.newArrayList();
+        for (Object object : objects) {
+            System.out.println("i");
+        }
     }
 }
