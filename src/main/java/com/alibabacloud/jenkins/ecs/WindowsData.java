@@ -68,6 +68,7 @@ public class WindowsData extends EcsTypeData {
         return specifyPassword;
     }
 
+    @Override
     public int getBootDelayInMillis() {
         try {
             return (int) TimeUnit.SECONDS.toMillis(Integer.parseInt(bootDelay));

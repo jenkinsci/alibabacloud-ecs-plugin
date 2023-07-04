@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+     <f:entry title="${%Name}" field="cloudName">
+        <f:textbox/>
+    </f:entry>
+    <f:entry field="credentialsId" title="${%Alibaba_Cloud_Credentials}"
+             description="${%CredentialsDescription}">
+        <f:textbox/>
+    </f:entry>
+    <f:entry field="sshKey" title="${%ECS_SSH_Key}">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%Region}" field="region">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%Jenkins Master In Private Network?}" field="intranetMaster">
+        <f:checkbox default="false"/>
+    </f:entry>
+    <f:entry title="${%VPC}" field="vpc">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%Security_Group}" field="securityGroup">
+        <f:textbox/>
+    </f:entry>
+    <f:advanced title="${%Advanced}">
+        <f:entry title="${%Assign_Public_Ip}" field="attachPublicIp">
+            <f:checkbox default="true"/>
+        </f:entry>
+        <f:entry title="${%Instance_Cap}" field="instanceCapStr">
+            <f:textbox default="${descriptor.defaultInstanceCapForCloud}"/>
+        </f:entry>
+        <f:entry title="${%No_delay_provisioning}" field="noDelayProvisioning">
+            <f:checkbox default="${descriptor.defaultNoDelayProvisioning}"/>
+        </f:entry>
+    </f:advanced>
+    <f:entry title="${%Description}" field="templateName">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%Image}" field="image">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Zone}" field="zone">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%InstanceType}" field="instanceType">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="${%VSW}" field="vsw">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%init Script}" field="initScript">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%UserData}" field="userData">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Labels}" field="labels">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Remote Fs}" field="remoteFs">
+         <f:textbox />
+     </f:entry>
+    <f:entry title="${%Remote user}" field="remoteAdmin">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="${%System_Disk_Category}" field="systemDiskCategory">
+         <f:textbox />
+    </f:entry>
+
+    <f:entry title="${%System_Disk_Size}" field="systemDiskSize">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Tags}" description="${%ECS Tag/Value Pairs}">
+        <f:repeatable field="tags">
+            <st:include page="config.jelly" class="${descriptor.clazz}"/>
+        </f:repeatable>
+    </f:entry>
+
+    <f:optionalBlock title="${%MountDataDisk}" field="mountDataDisk" checked="${instance.isMountDataDisk()}"
+                     inline="true">
+        <f:entry title="${%DataDiskCategory}" field="dataDiskCategory">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="${%DataDiskSize}" field="dataDiskSize">
+            <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
+        </f:entry>
+        <f:entry title="${%MountQuantity}" field="mountQuantity">
+            <f:textbox/>
+        </f:entry>
+    </f:optionalBlock>
+
+    <f:entry title="${%ChargeType}" field="chargeType">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Instance_Cap}" field="instanceCap">
+        <f:textbox default="5"/>
+    </f:entry>
+
+    <f:entry title="${%Minimum_number_of_instances}" field="minimumNumberOfInstances">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Launch_Timeout}" field="launchTimeout">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Number_of_Executors}" field="numExecutors">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Idle Termination Time In Minutes}" field="idleTerminationMinutes">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Connection Strategy}" field="connectionStrategy">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="${%Instance_Name}" field="name">
+        <f:textbox />
+    </f:entry>
+    <f:dropdownDescriptorSelector title="${%ECS_Type}" field="ecsType" descriptors="${descriptor.getEcsTypeDescriptors()}" />
+    <f:entry title="${%Maximum Total Uses}" field="maxTotalUses">
+        <f:textbox />
+    </f:entry>
+
+
+
+</j:jelly>
