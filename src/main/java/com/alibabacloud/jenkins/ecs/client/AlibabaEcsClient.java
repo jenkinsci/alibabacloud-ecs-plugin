@@ -174,7 +174,7 @@ public class AlibabaEcsClient {
         request.setPageNumber(INIT_PAGE_NUMBER);
         request.setPageSize(MAX_PAGE_SIZE);
         request.setSysRegionId(regionNo);
-        List<Vpc> securityGroupList = Lists.newArrayList();
+        List<SecurityGroup> securityGroupList = Lists.newArrayList();
         DescribeSecurityGroupsResponse acsResponse = new DescribeSecurityGroupsResponse();
         acsResponse.setSecurityGroups(securityGroupList);
         do {
