@@ -170,19 +170,27 @@ public class AlibabaEcsClient {
     }
 
     public List<SecurityGroup> describeSecurityGroups(String vpc) {
-        try {
-            DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
-            request.setSysRegionId(regionNo);
-            request.setVpcId(vpc);
-            DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);
-            if (CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
-                return Lists.newArrayList();
+        DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
+        request.setPageNumber(INIT_PAGE_NUMBER);
+        request.setPageSize(MAX_PAGE_SIZE);
+        request.setSysRegionId(regionNo);
+        List<Vpc> securityGroupList = Lists.newArrayList();
+        DescribeSecurityGroupsResponse acsResponse = new DescribeSecurityGroupsResponse();
+        acsResponse.setSecurityGroups(securityGroupList);
+        do {
+            try {
+                acsResponse = client.getAcsResponse(request);
+                if (null == acsResponse || CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
+                    break;
+                }
+                securityGroupList.addAll(acsResponse.getSecurityGroups());
+            } catch (Exception e) {
+                log.error("describeSecurityGroups error.regionId: {}", regionNo, e);
             }
-            return acsResponse.getSecurityGroups();
-        } catch (Exception e) {
-            log.error("describeSecurityGroups error.", e);
-        }
-        return Lists.newArrayList();
+            request.setPageNumber(request.getPageNumber() + 1);
+        } while (acsResponse.getSecurityGroups().size() == MAX_PAGE_SIZE);
+
+        return securityGroupList;
     }
 
     public String createSecurityGroup(String vpcId) {
