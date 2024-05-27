@@ -1,9 +1,13 @@
 package com.alibabacloud.jenkins.ecs;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.google.common.collect.Lists;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -14,10 +18,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -59,11 +60,20 @@ public class AlibabaEcsStepTest {
     public void bootInstance() throws Exception {
         WorkflowJob boot = r.jenkins.createProject(WorkflowJob.class, "AlibabaCloudEcsTest");
         boot.setDefinition(new CpsFlowDefinition(
-                " node('master') {\n" +
-                        "    def X = alibabaEcs cloud: 'ALI-Alibaba Cloud ECS', template: 'cn-beijing-h-ecs.g5.large'\n" +
-                        "}", true));
+            " node('master') {\n" +
+                "    def X = alibabaEcs cloud: 'ALI-Alibaba Cloud ECS', template: 'cn-beijing-h-ecs.g5.large'\n" +
+                "}", true));
         WorkflowRun b = r.assertBuildStatusSuccess(boot.scheduleBuild2(0));
         r.assertLogContains("SUCCESS", b);
+    }
+
+    @Test
+    public void test() {
+        EcsTemplateStep ecsTemplateStep = new EcsTemplateStep();
+        ecsTemplateStep.setDataDiskId("i-ssss");
+        ecsTemplateStep.setSnapshotId("s-qqqqqqq");
+        String snapshotId = ecsTemplateStep.getSnapshotId();
+        Assert.assertEquals(snapshotId, "s-qqqqqqq");
     }
 
 }

@@ -41,14 +41,23 @@
         </f:entry>
         <f:optionalBlock title="${%MountDataDisk}" field="mountDataDisk" checked="${instance.isMountDataDisk()}"
                          inline="true">
-            <f:entry title="${%DataDiskCategory}" field="dataDiskCategory">
-                <f:enum>${it.name()}</f:enum>
-            </f:entry>
-            <f:entry title="${%DataDiskSize}" field="dataDiskSize">
-                <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
-            </f:entry>
-            <f:entry title="${%MountQuantity}" field="mountQuantity">
-                <f:textbox/>
+            <f:optionalBlock title="${%NewDisk}" field="newDataDisk" checked="${instance.isNewDataDisk()}"
+                             inline="true">
+                <f:entry title="${%DataDiskCategory}" field="dataDiskCategory">
+                    <f:enum>${it.name()}</f:enum>
+                </f:entry>
+                <f:entry title="${%DataDiskSize}" field="dataDiskSize">
+                    <f:textbox default="${descriptor.defaultSystemDiskSize}"/>
+                </f:entry>
+                <f:entry title="${%MountQuantity}" field="mountQuantity">
+                    <f:textbox/>
+                </f:entry>
+                <f:entry title="${%SnapshotId}" field="snapshotId">
+                    <f:combobox/>
+                </f:entry>
+             </f:optionalBlock>
+            <f:entry title="${%DiskId}" field="dataDiskId">
+               <f:combobox/>
             </f:entry>
         </f:optionalBlock>
         <f:dropdownDescriptorSelector title="${%ECS_Type}" field="ecsType" descriptors="${descriptor.getEcsTypeDescriptors()}" />
@@ -96,7 +105,7 @@
                         </f:entry>
         </f:advanced>
         <f:validateButton title="${%TestCreateEcs}" progress="${%Testing...}" method="dryRunInstance"
-                          with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,amiType,password, mountDataDisk,dataDiskCategory,dataDiskSize,mountQuantity"/>
+                          with="credentialsId,intranetMaster,region,image,securityGroup,zone,vsw,instanceType,systemDiskCategory,systemDiskSize,attachPublicIp,chargeType,userData,amiType,password, mountDataDisk,dataDiskCategory,dataDiskSize,mountQuantity,newDataDisk,dataDiskId,minimumNumberOfInstances,snapshotId"/>
         <f:entry title="">
             <div align="right">
                 <f:repeatableDeleteButton value="Delete Image"/>

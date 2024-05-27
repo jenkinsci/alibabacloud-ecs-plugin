@@ -1,0 +1,12 @@
+<div>
+    已有的云盘id<br>
+    当云盘需要挂载在多个实例上时的限制详见<a href="https://help.aliyun.com/document_detail/256487.html?spm=a2c4g.262105.0.0"> NVMe云盘概述</a>
+    当前使用的时块存储EBS，时延极低。吞吐数十Gbps，单ECS通过POSIX接口访问，随机读写<br>
+    当需要挂载的云盘为NVMe云盘时需要在初始化脚本，选择的已有云盘若为新云盘需要先格式化云盘<br>
+    <code>
+        #!/bin/bash<br>
+        mkdir /dev/xvdb<br>
+        mount /dev/nvme0n1 /dev/xvdb<br>
+        mount /dev/nvme1n1 /dev/xvdb<br>
+    </code>
+</div>
