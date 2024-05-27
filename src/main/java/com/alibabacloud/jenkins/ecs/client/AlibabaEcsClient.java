@@ -91,7 +91,8 @@ public class AlibabaEcsClient {
 
     private IAcsClient client;
     private String regionNo;
-    private static Integer MAX_PAGE_SIZE = 50;
+    private static Integer MAX_PAGE_SIZE = 3;
+    private static Integer MAX_RESULTS = 100;
     private static Integer INIT_PAGE_NUMBER = 1;
     private Boolean intranetMaster = Boolean.FALSE;
 
@@ -99,9 +100,9 @@ public class AlibabaEcsClient {
         IClientProfile profile;
         if (CredentialsHelper.isSessionTokenCredentials(credentials)) {
             profile = DefaultProfile.getProfile(regionNo,
-                    credentials.getAccessKeyId(),
-                    credentials.getAccessKeySecret(),
-                    ((AlibabaSessionTokenCredentials) credentials).getSecretToken());
+                credentials.getAccessKeyId(),
+                credentials.getAccessKeySecret(),
+                ((AlibabaSessionTokenCredentials)credentials).getSecretToken());
         } else {
             profile = DefaultProfile.getProfile(regionNo,
                     credentials.getAccessKeyId(),
@@ -222,19 +223,27 @@ public class AlibabaEcsClient {
     }
 
     public List<SecurityGroup> describeSecurityGroups(String vpc) {
-        try {
-            DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
-            request.setSysRegionId(regionNo);
-            request.setVpcId(vpc);
-            DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);
-            if (CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
-                return Lists.newArrayList();
+        //try {
+        DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
+        request.setSysRegionId(regionNo);
+        request.setVpcId(vpc);
+        request.setMaxResults(MAX_RESULTS);
+        List<SecurityGroup> securityGroups = Lists.newArrayList();
+        DescribeSecurityGroupsResponse acsResponse = new DescribeSecurityGroupsResponse();
+        acsResponse.setSecurityGroups(securityGroups);
+        do {
+            try {
+                acsResponse = client.getAcsResponse(request);
+                if (null == acsResponse || CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
+                    break;
+                }
+                securityGroups.addAll(acsResponse.getSecurityGroups());
+                request.setNextToken(acsResponse.getNextToken());
+            } catch (Exception e) {
+                log.error("describeSecurityGroups error.regionId: {}", regionNo, e);
             }
-            return acsResponse.getSecurityGroups();
-        } catch (Exception e) {
-            log.error("describeSecurityGroups error.", e);
-        }
-        return Lists.newArrayList();
+        } while (StringUtils.isNotBlank(request.getNextToken()));
+        return securityGroups;
     }
 
     public String createSecurityGroup(String vpcId) {
