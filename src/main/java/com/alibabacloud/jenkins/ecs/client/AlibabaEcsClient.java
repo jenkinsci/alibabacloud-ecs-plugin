@@ -1,23 +1,66 @@
 package com.alibabacloud.jenkins.ecs.client;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
 import com.alibaba.fastjson.JSON;
+
 import com.alibabacloud.credentials.plugin.auth.AlibabaSessionTokenCredentials;
 import com.alibabacloud.credentials.plugin.util.CredentialsHelper;
 import com.alibabacloud.jenkins.ecs.Messages;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.auth.AlibabaCloudCredentials;
-import com.aliyuncs.ecs.model.v20140526.*;
+import com.aliyuncs.ecs.model.v20140526.AllocatePublicIpAddressRequest;
+import com.aliyuncs.ecs.model.v20140526.AllocatePublicIpAddressResponse;
+import com.aliyuncs.ecs.model.v20140526.AuthorizeSecurityGroupRequest;
+import com.aliyuncs.ecs.model.v20140526.CreateSecurityGroupRequest;
+import com.aliyuncs.ecs.model.v20140526.CreateSecurityGroupResponse;
+import com.aliyuncs.ecs.model.v20140526.CreateVSwitchRequest;
+import com.aliyuncs.ecs.model.v20140526.CreateVSwitchResponse;
+import com.aliyuncs.ecs.model.v20140526.CreateVpcRequest;
+import com.aliyuncs.ecs.model.v20140526.CreateVpcResponse;
+import com.aliyuncs.ecs.model.v20140526.DeleteInstanceRequest;
+import com.aliyuncs.ecs.model.v20140526.DeleteInstanceResponse;
+import com.aliyuncs.ecs.model.v20140526.DeleteVSwitchRequest;
+import com.aliyuncs.ecs.model.v20140526.DeleteVpcRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource.SupportedResource;
+import com.aliyuncs.ecs.model.v20140526.DescribeImagesRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstanceTypesRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstanceTypesResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstancesRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesResponse.Instance;
+import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeKeyPairsResponse.KeyPair;
+import com.aliyuncs.ecs.model.v20140526.DescribeRegionsRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse.Region;
+import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse.SecurityGroup;
+import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse.VSwitch;
+import com.aliyuncs.ecs.model.v20140526.DescribeVpcsRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeVpcsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVpcsResponse.Vpc;
+import com.aliyuncs.ecs.model.v20140526.DescribeZonesRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeZonesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeZonesResponse.Zone;
+import com.aliyuncs.ecs.model.v20140526.ModifyInstanceAttributeRequest;
+import com.aliyuncs.ecs.model.v20140526.ModifyInstanceAttributeResponse;
+import com.aliyuncs.ecs.model.v20140526.RunInstancesRequest;
+import com.aliyuncs.ecs.model.v20140526.RunInstancesResponse;
+import com.aliyuncs.ecs.model.v20140526.StopInstanceRequest;
+import com.aliyuncs.ecs.model.v20140526.StopInstanceResponse;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.FormatType;
 import com.aliyuncs.profile.DefaultProfile;
@@ -28,9 +71,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
 /**
  * Created by kunlun.ykl on 2020/8/26.
  */
@@ -39,7 +79,8 @@ public class AlibabaEcsClient {
 
     private IAcsClient client;
     private String regionNo;
-    private static Integer MAX_PAGE_SIZE = 50;
+    private static Integer MAX_PAGE_SIZE = 3;
+    private static Integer MAX_RESULTS = 100;
     private static Integer INIT_PAGE_NUMBER = 1;
     private Boolean intranetMaster = Boolean.FALSE;
 
@@ -47,9 +88,9 @@ public class AlibabaEcsClient {
         IClientProfile profile;
         if (CredentialsHelper.isSessionTokenCredentials(credentials)) {
             profile = DefaultProfile.getProfile(regionNo,
-                    credentials.getAccessKeyId(),
-                    credentials.getAccessKeySecret(),
-                    ((AlibabaSessionTokenCredentials) credentials).getSecretToken());
+                credentials.getAccessKeyId(),
+                credentials.getAccessKeySecret(),
+                ((AlibabaSessionTokenCredentials)credentials).getSecretToken());
         } else {
             profile = DefaultProfile.getProfile(regionNo,
                     credentials.getAccessKeyId(),
@@ -170,19 +211,24 @@ public class AlibabaEcsClient {
     }
 
     public List<SecurityGroup> describeSecurityGroups(String vpc) {
-        try {
-            DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
-            request.setSysRegionId(regionNo);
-            request.setVpcId(vpc);
-            DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);
-            if (CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
-                return Lists.newArrayList();
+        DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
+        request.setSysRegionId(regionNo);
+        request.setVpcId(vpc);
+        request.setMaxResults(MAX_RESULTS);
+        List<SecurityGroup> securityGroups = Lists.newArrayList();
+        do {
+            try {
+                DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);
+                if (null == acsResponse || CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
+                    break;
+                }
+                securityGroups.addAll(acsResponse.getSecurityGroups());
+                request.setNextToken(acsResponse.getNextToken());
+            } catch (Exception e) {
+                log.error("describeSecurityGroups error.regionId: {}, vpcId: {}", regionNo, vpc, e);
             }
-            return acsResponse.getSecurityGroups();
-        } catch (Exception e) {
-            log.error("describeSecurityGroups error.", e);
-        }
-        return Lists.newArrayList();
+        } while (StringUtils.isNotBlank(request.getNextToken()));
+        return securityGroups;
     }
 
     public String createSecurityGroup(String vpcId) {
