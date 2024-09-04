@@ -223,24 +223,21 @@ public class AlibabaEcsClient {
     }
 
     public List<SecurityGroup> describeSecurityGroups(String vpc) {
-        //try {
         DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest();
         request.setSysRegionId(regionNo);
         request.setVpcId(vpc);
         request.setMaxResults(MAX_RESULTS);
         List<SecurityGroup> securityGroups = Lists.newArrayList();
-        DescribeSecurityGroupsResponse acsResponse = new DescribeSecurityGroupsResponse();
-        acsResponse.setSecurityGroups(securityGroups);
         do {
             try {
-                acsResponse = client.getAcsResponse(request);
+                DescribeSecurityGroupsResponse acsResponse = client.getAcsResponse(request);
                 if (null == acsResponse || CollectionUtils.isEmpty(acsResponse.getSecurityGroups())) {
                     break;
                 }
                 securityGroups.addAll(acsResponse.getSecurityGroups());
                 request.setNextToken(acsResponse.getNextToken());
             } catch (Exception e) {
-                log.error("describeSecurityGroups error.regionId: {}", regionNo, e);
+                log.error("describeSecurityGroups error.regionId: {}, vpcId: {}", regionNo, vpc, e);
             }
         } while (StringUtils.isNotBlank(request.getNextToken()));
         return securityGroups;
@@ -458,8 +455,7 @@ public class AlibabaEcsClient {
             request.setInstanceIds(JSON.toJSONString(instanceIds));
             DescribeInstancesResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getInstances())) {
-                log.error("describeInstances error. instanceIds: {} acsResponse: {}", JSON.toJSONString(instanceIds),
-                    JSON.toJSONString(acsResponse));
+                log.error("describeInstances error. instanceIds: {} acsResponse: {}", JSON.toJSONString(instanceIds), JSON.toJSONString(acsResponse));
                 return Lists.newArrayList();
             }
             return acsResponse.getInstances();
