@@ -1,6 +1,7 @@
 package com.alibabacloud.jenkins.ecs.client;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -14,6 +15,8 @@ import com.aliyuncs.IAcsClient;
 import com.aliyuncs.auth.AlibabaCloudCredentials;
 import com.aliyuncs.ecs.model.v20140526.AllocatePublicIpAddressRequest;
 import com.aliyuncs.ecs.model.v20140526.AllocatePublicIpAddressResponse;
+import com.aliyuncs.ecs.model.v20140526.AttachDiskRequest;
+import com.aliyuncs.ecs.model.v20140526.AttachDiskResponse;
 import com.aliyuncs.ecs.model.v20140526.AuthorizeSecurityGroupRequest;
 import com.aliyuncs.ecs.model.v20140526.CreateSecurityGroupRequest;
 import com.aliyuncs.ecs.model.v20140526.CreateSecurityGroupResponse;
@@ -30,8 +33,14 @@ import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource;
 import com.aliyuncs.ecs.model.v20140526.DescribeAvailableResourceResponse.AvailableZone.AvailableResource.SupportedResource;
+import com.aliyuncs.ecs.model.v20140526.DescribeDisksRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeDisksResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeDisksResponse.Disk;
 import com.aliyuncs.ecs.model.v20140526.DescribeImagesRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstanceStatusRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstanceStatusResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeInstanceStatusResponse.InstanceStatus;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstanceTypesRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstanceTypesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstancesRequest;
@@ -46,6 +55,9 @@ import com.aliyuncs.ecs.model.v20140526.DescribeRegionsResponse.Region;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeSecurityGroupsResponse.SecurityGroup;
+import com.aliyuncs.ecs.model.v20140526.DescribeSnapshotsRequest;
+import com.aliyuncs.ecs.model.v20140526.DescribeSnapshotsResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeSnapshotsResponse.Snapshot;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeVSwitchesResponse.VSwitch;
@@ -453,6 +465,47 @@ public class AlibabaEcsClient {
         return Lists.newArrayList();
     }
 
+    public List<Disk> describeDisk(String region, String zone, String diskId) {
+        try {
+            DescribeDisksRequest request = new DescribeDisksRequest();
+            request.setSysRegionId(region);
+            request.setZoneId(zone);
+            if (StringUtils.isNotBlank(diskId)) {
+                List<String> diskIds = Lists.newArrayList(diskId);
+                request.setDiskIds(JSON.toJSONString(diskIds));
+            }
+            DescribeDisksResponse response = client.getAcsResponse(request);
+            List<Disk> disks = response.getDisks();
+            if (CollectionUtils.isEmpty(disks)) {
+                log.error("disks is empty. region: {}, zone: {}, response: {}", region, zone,
+                    JSON.toJSONString(response));
+                return Lists.newArrayList();
+            }
+            return disks;
+        } catch (Exception e) {
+            log.error("describeDisk error. region: {}, zone: {}", region, zone, e);
+        }
+        return Lists.newArrayList();
+    }
+
+    public List<String> describeSnapshotIds(String region) {
+        try {
+            DescribeSnapshotsRequest request = new DescribeSnapshotsRequest();
+            request.setSysRegionId(region);
+            DescribeSnapshotsResponse response = client.getAcsResponse(request);
+            List<Snapshot> snapshots = response.getSnapshots();
+            if (CollectionUtils.isEmpty(snapshots)) {
+                log.error("snapshots is empty . region: {}, response:{}", region, JSON.toJSONString(response));
+                return Lists.newArrayList();
+            }
+            List<String> snapshotIds = snapshots.stream().map(Snapshot::getSnapshotId).collect(Collectors.toList());
+            return snapshotIds;
+        } catch (Exception e) {
+            log.error("describeSnapshots error. region: {}", region, e);
+        }
+        return Lists.newArrayList();
+    }
+
     public void stopIntance(String instanceId) {
         try {
             StopInstanceRequest request = new StopInstanceRequest();
@@ -501,18 +554,36 @@ public class AlibabaEcsClient {
 
     public boolean modifyInstanceAttr(ModifyInstanceAttributeRequest request) {
         try {
-            if(StringUtils.isBlank(request.getInstanceId())) {
+            if (StringUtils.isBlank(request.getInstanceId())) {
                 log.error("modifyInstanceAttr param error. instanceId is required.");
                 return false;
             }
             log.info("modifyInstanceAttr start. request: {}", JSON.toJSONString(request));
             request.setAcceptFormat(FormatType.JSON);
             ModifyInstanceAttributeResponse acsResponse = client.getAcsResponse(request);
-            log.info("modifyInstanceAttr finished. request: {} requestId: {}", JSON.toJSONString(request), acsResponse.getRequestId());
+            log.info("modifyInstanceAttr finished. request: {} requestId: {}", JSON.toJSONString(request),
+                acsResponse.getRequestId());
         } catch (Exception e) {
             log.error("modifyInstanceAttr error. request: {}", JSON.toJSONString(request), e);
         }
         return false;
+    }
+
+    public void attachDisk(String instanceId, String diskId) {
+        try {
+            if (StringUtils.isBlank(instanceId) && StringUtils.isBlank(diskId)) {
+                log.error("attachDisk param error. instanceId and diskId is required.");
+            }
+            log.info("attachDisk start. instanceId: {}, diskId: {}", instanceId, diskId);
+            AttachDiskRequest request = new AttachDiskRequest();
+            request.setDiskId(diskId);
+            request.setInstanceId(instanceId);
+            AttachDiskResponse response = client.getAcsResponse(request);
+            log.info("attachDisk finished. requestId: {}", response.getRequestId());
+        } catch (Exception e) {
+            log.error("attachDisk error. instanceId: {}, diskId: {}", instanceId, diskId, e);
+        }
+
     }
 
     public FormValidation druRunInstances(RunInstancesRequest request) {
@@ -553,6 +624,30 @@ public class AlibabaEcsClient {
             log.error("allocatePublicIp error. instanceId: {}", instanceId, e);
         }
         return null;
+    }
+
+    public boolean describeInstanceStatus(String instanceId) {
+        try {
+            DescribeInstanceStatusRequest request = new DescribeInstanceStatusRequest();
+            request.setSysRegionId(regionNo);
+            request.setInstanceIds(Lists.newArrayList(instanceId));
+            DescribeInstanceStatusResponse response = client.getAcsResponse(request);
+            List<InstanceStatus> instanceStatuses = response.getInstanceStatuses();
+            if (CollectionUtils.isEmpty(instanceStatuses)) {
+                log.error("describeInstanceStatus error. region: {}, instanceId: {}, requestId: {}", regionNo,
+                    instanceId, response.getRequestId());
+                return false;
+            }
+            String status = instanceStatuses.get(0).getStatus();
+            if (status.equals("Running")) {
+                return true;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+
     }
 
 }
