@@ -1,5 +1,6 @@
 package com.alibabacloud.jenkins.ecs.client;
 
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,9 +76,12 @@ import com.aliyuncs.ecs.model.v20140526.StopInstanceRequest;
 import com.aliyuncs.ecs.model.v20140526.StopInstanceResponse;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.FormatType;
+import com.aliyuncs.http.HttpClientConfig;
+import com.aliyuncs.http.ProtocolType;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.profile.IClientProfile;
 import com.google.common.collect.Lists;
+import com.google.common.math.IntMath;
 import hudson.util.FormValidation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -105,13 +109,17 @@ public class AlibabaEcsClient {
                 ((AlibabaSessionTokenCredentials)credentials).getSecretToken());
         } else {
             profile = DefaultProfile.getProfile(regionNo,
-                    credentials.getAccessKeyId(),
-                    credentials.getAccessKeySecret());
+                credentials.getAccessKeyId(),
+                credentials.getAccessKeySecret());
         }
         if (intranetMaster != null && intranetMaster) {
             // use vpc endpoint if jenkins master in vpc private env
             profile.enableUsingVpcEndpoint();
         }
+        HttpClientConfig clientConfig = HttpClientConfig.getDefault();
+        clientConfig.setProtocolType(ProtocolType.HTTPS);
+        clientConfig.setIgnoreSSLCerts(true);
+        profile.setHttpClientConfig(clientConfig);
         this.client = new DefaultAcsClient(profile);
         this.regionNo = regionNo;
         this.intranetMaster = intranetMaster == null ? Boolean.FALSE : intranetMaster;
@@ -177,7 +185,6 @@ public class AlibabaEcsClient {
             log.error("vpcId is not null");
         }
         DescribeVpcsRequest request = new DescribeVpcsRequest();
-
         request.setSysRegionId(regionNo);
         request.setVpcId(vpcId);
         DescribeVpcsResponse acsResponse = null;
@@ -326,17 +333,34 @@ public class AlibabaEcsClient {
 
     public List<VSwitch> describeVsws(String zone, String vpc) {
         try {
-            DescribeVSwitchesRequest describeZonesRequest = new DescribeVSwitchesRequest();
-            describeZonesRequest.setSysRegionId(regionNo);
+            List<VSwitch> vswitchs = Lists.newArrayList();
+            DescribeVSwitchesRequest request = new DescribeVSwitchesRequest();
+            request.setSysRegionId(regionNo);
             if (StringUtils.isNotEmpty(zone)) {
-                describeZonesRequest.setZoneId(zone);
+                request.setZoneId(zone);
             }
-            describeZonesRequest.setVpcId(vpc);
-            DescribeVSwitchesResponse acsResponse = client.getAcsResponse(describeZonesRequest);
+            request.setVpcId(vpc);
+            request.setPageSize(50);
+            DescribeVSwitchesResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getVSwitches())) {
                 return Lists.newArrayList();
             }
-            return acsResponse.getVSwitches();
+            vswitchs.addAll(acsResponse.getVSwitches());
+
+            if (acsResponse.getTotalCount() > 50) {
+                int numberSize = IntMath.divide(acsResponse.getTotalCount(), 50, RoundingMode.CEILING);
+                for (int i = 2; i <= numberSize; i++) {
+                    request.setPageNumber(i);
+                    DescribeVSwitchesResponse response = client.getAcsResponse(request);
+                    if (CollectionUtils.isEmpty(response.getVSwitches())) {
+                        log.warn("VSwitches is empty. numberSize: {}, requestId: {}", numberSize,
+                            response.getRequestId());
+                        continue;
+                    }
+                    vswitchs.addAll(response.getVSwitches());
+                }
+            }
+            return vswitchs;
         } catch (Exception e) {
             log.error("describeVsws error.", e);
         }
@@ -598,7 +622,6 @@ public class AlibabaEcsClient {
             request.setIoOptimized("optimized");
             request.setInstanceChargeType("PostPaid");
             request.setDryRun(true);
-
             RunInstancesResponse acsResponse = client.getAcsResponse(request);
             log.info("druRunInstances success. acsResponse: {}", JSON.toJSONString(acsResponse));
             return FormValidation.ok(Messages.AlibabaECSCloud_Success());
