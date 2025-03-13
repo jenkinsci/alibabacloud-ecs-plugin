@@ -4,7 +4,7 @@
     <tr>
         <td/>
         <td colspan="${monitors.size()+1}">
-            <f:form action="${rootURL}/cloud/${it.name}/provision" method="post" name="provision">
+            <f:form action="${rootURL}/${it.url}/provision" method="post" name="provision">
                 <input type="submit" class="ecs-provision-button" value="${%Provision via} ${it.cloudName}"/>
                 <select name="templateName">
                     <j:forEach var="t" items="${it.templates}">
