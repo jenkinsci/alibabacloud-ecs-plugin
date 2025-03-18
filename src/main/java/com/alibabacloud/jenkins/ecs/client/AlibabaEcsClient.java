@@ -39,6 +39,7 @@ import com.aliyuncs.ecs.model.v20140526.DescribeDisksResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeDisksResponse.Disk;
 import com.aliyuncs.ecs.model.v20140526.DescribeImagesRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse;
+import com.aliyuncs.ecs.model.v20140526.DescribeImagesResponse.Image;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstanceStatusRequest;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstanceStatusResponse;
 import com.aliyuncs.ecs.model.v20140526.DescribeInstanceStatusResponse.InstanceStatus;
@@ -95,7 +96,7 @@ public class AlibabaEcsClient {
 
     private IAcsClient client;
     private String regionNo;
-    private static Integer MAX_PAGE_SIZE = 3;
+    private static Integer MAX_PAGE_SIZE = 50;
     private static Integer MAX_RESULTS = 100;
     private static Integer INIT_PAGE_NUMBER = 1;
     private Boolean intranetMaster = Boolean.FALSE;
@@ -142,14 +143,30 @@ public class AlibabaEcsClient {
         return Lists.newArrayList();
     }
 
-    public List<DescribeImagesResponse.Image> describeImages(DescribeImagesRequest request) {
+    public List<Image> describeImages(DescribeImagesRequest request) {
         try {
+            List<Image> images = Lists.newArrayList();
             request.setSysRegionId(regionNo);
+            request.setPageSize(MAX_RESULTS);
             DescribeImagesResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getImages())) {
                 return Lists.newArrayList();
             }
-            return acsResponse.getImages();
+            images.addAll(acsResponse.getImages());
+            if (acsResponse.getTotalCount() > MAX_RESULTS) {
+                int numberSize = IntMath.divide(acsResponse.getTotalCount(), MAX_RESULTS, RoundingMode.CEILING);
+                for (int i = 2; i <= numberSize; i++) {
+                    request.setPageNumber(i);
+                    DescribeImagesResponse response = client.getAcsResponse(request);
+                    if (CollectionUtils.isEmpty(response.getImages())) {
+                        log.warn("Images is empty. numberSize: {}, requestId: {}", numberSize,
+                            response.getRequestId());
+                        continue;
+                    }
+                    images.addAll(response.getImages());
+                }
+            }
+            return images;
         } catch (Exception e) {
             log.error("describeImages error.", e);
         }
@@ -157,27 +174,36 @@ public class AlibabaEcsClient {
     }
 
     public List<Vpc> describeVpcs() {
-        DescribeVpcsRequest request = new DescribeVpcsRequest();
-        request.setPageNumber(INIT_PAGE_NUMBER);
-        request.setPageSize(MAX_PAGE_SIZE);
-        request.setSysRegionId(regionNo);
-        List<Vpc> vpcList = Lists.newArrayList();
-        DescribeVpcsResponse acsResponse = new DescribeVpcsResponse();
-        acsResponse.setVpcs(vpcList);
-        do {
-            try {
-                acsResponse = client.getAcsResponse(request);
-                if (null == acsResponse || CollectionUtils.isEmpty(acsResponse.getVpcs())) {
-                    break;
-                }
-                vpcList.addAll(acsResponse.getVpcs());
-            } catch (Exception e) {
-                log.error("describeVpcs error.regionId: {}", regionNo, e);
+        try {
+            DescribeVpcsRequest request = new DescribeVpcsRequest();
+            request.setPageNumber(INIT_PAGE_NUMBER);
+            request.setPageSize(MAX_PAGE_SIZE);
+            request.setSysRegionId(regionNo);
+            DescribeVpcsResponse acsResponse = client.getAcsResponse(request);
+            if (CollectionUtils.isEmpty(acsResponse.getVpcs())) {
+                return Lists.newArrayList();
             }
-            request.setPageNumber(request.getPageNumber() + 1);
-        } while (acsResponse.getVpcs().size() == MAX_PAGE_SIZE);
 
-        return vpcList;
+            List<Vpc> vpcList = Lists.newArrayList();
+            vpcList.addAll(acsResponse.getVpcs());
+            if (acsResponse.getTotalCount() > MAX_PAGE_SIZE) {
+                int numberSize = IntMath.divide(acsResponse.getTotalCount(), MAX_PAGE_SIZE, RoundingMode.CEILING);
+                for (int i = 2; i <= numberSize; i++) {
+                    request.setPageNumber(i);
+                    DescribeVpcsResponse response = client.getAcsResponse(request);
+                    if (CollectionUtils.isEmpty(response.getVpcs())) {
+                        log.warn("Vpcs is empty. numberSize: {}, requestId: {}", numberSize,
+                            response.getRequestId());
+                        continue;
+                    }
+                    vpcList.addAll(response.getVpcs());
+                }
+            }
+            return vpcList;
+        } catch (Exception e) {
+            log.error("describeVpcs error.", e);
+        }
+        return Lists.newArrayList();
     }
 
     public Vpc describeVpc(String vpcId) {
@@ -340,15 +366,15 @@ public class AlibabaEcsClient {
                 request.setZoneId(zone);
             }
             request.setVpcId(vpc);
-            request.setPageSize(50);
+            request.setPageSize(MAX_PAGE_SIZE);
             DescribeVSwitchesResponse acsResponse = client.getAcsResponse(request);
             if (CollectionUtils.isEmpty(acsResponse.getVSwitches())) {
                 return Lists.newArrayList();
             }
             vswitchs.addAll(acsResponse.getVSwitches());
 
-            if (acsResponse.getTotalCount() > 50) {
-                int numberSize = IntMath.divide(acsResponse.getTotalCount(), 50, RoundingMode.CEILING);
+            if (acsResponse.getTotalCount() > MAX_RESULTS) {
+                int numberSize = IntMath.divide(acsResponse.getTotalCount(), MAX_RESULTS, RoundingMode.CEILING);
                 for (int i = 2; i <= numberSize; i++) {
                     request.setPageNumber(i);
                     DescribeVSwitchesResponse response = client.getAcsResponse(request);
@@ -516,13 +542,21 @@ public class AlibabaEcsClient {
         try {
             DescribeSnapshotsRequest request = new DescribeSnapshotsRequest();
             request.setSysRegionId(region);
-            DescribeSnapshotsResponse response = client.getAcsResponse(request);
-            List<Snapshot> snapshots = response.getSnapshots();
-            if (CollectionUtils.isEmpty(snapshots)) {
-                log.error("snapshots is empty . region: {}, response:{}", region, JSON.toJSONString(response));
-                return Lists.newArrayList();
-            }
-            List<String> snapshotIds = snapshots.stream().map(Snapshot::getSnapshotId).collect(Collectors.toList());
+            request.setMaxResults(MAX_RESULTS);
+            List<String> snapshotIds = Lists.newArrayList();
+            do {
+                try {
+                    DescribeSnapshotsResponse acsResponse = client.getAcsResponse(request);
+                    if (null == acsResponse || CollectionUtils.isEmpty(acsResponse.getSnapshots())) {
+                        break;
+                    }
+                    snapshotIds.addAll(
+                        acsResponse.getSnapshots().stream().map(Snapshot::getSnapshotId).collect(Collectors.toList()));
+                    request.setNextToken(acsResponse.getNextToken());
+                } catch (Exception e) {
+                    log.error("describeSnapshotIds error.regionId: {}", regionNo, e);
+                }
+            } while (StringUtils.isNotBlank(request.getNextToken()));
             return snapshotIds;
         } catch (Exception e) {
             log.error("describeSnapshots error. region: {}", region, e);
