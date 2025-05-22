@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import com.alibabacloud.credentials.plugin.auth.AlibabaPrivateKey;
 import com.alibabacloud.jenkins.ecs.exception.AlibabaEcsException;
@@ -206,7 +207,7 @@ public class AlibabaEcsUnixComputerLauncher extends AlibabaEcsComputerLauncher {
 
         String privateKey = tempKey.getPrivateKey();
 
-        File tempFile = File.createTempFile("ecs_", ".pem");
+        File tempFile = Files.createTempFile("ecs_", ".pem").toFile();
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
             OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
